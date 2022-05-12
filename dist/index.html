@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Getting Started with ml5.js</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- p5 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.0.0/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.0.0/addons/p5.sound.min.js"></script>
+    <!-- ml5 -->
+    <script src="https://unpkg.com/ml5@latest/dist/ml5.min.js"></script>
+  </head>
+
+  <body>
+    <script src="/app.c328ef1a.js"></script>
+    <!-- <canvas id="myChart" width="400" height="400"></canvas> -->
+
+    <!-- <script>
+      let model;
+
+      function setup() {
+        let options = {
+          inputs: ["x", "y"],
+          outputs: ["label"],
+          task: "classification",
+          debug: "true",
+        };
+
+        model = ml5.neuralNetwork(options);
+      }
+
+      function addInputs() {
+        for (let i = 0; i < 50; i++) {
+          let inputs = {
+            x: Math.floor(Math.random() * 3),
+            y: Math.floor(Math.random() * 8),
+          };
+
+          let target = {
+            label: "A",
+          };
+
+          //add training data
+          model.addData(inputs, target);
+        }
+
+        for (let i = 0; i < 50; i++) {
+          let inputs = {
+            x: Math.floor(Math.random() * 9),
+            y: Math.floor(Math.random() * 4),
+          };
+
+          let target = {
+            label: "B",
+          };
+
+          //add training data
+          model.addData(inputs, target);
+        }
+      }
+
+      function trainModel() {
+        model.normalizeData(); //convert data between 0 and 1
+        let options = {
+          epochs: 100,
+        };
+
+        model.train(options, whileTraining, finishedTraining);
+      }
+
+      function whileTraining(epoch, loss) {
+        console.log(epoch);
+      }
+
+      function finishedTraining() {
+        console.log("finished training");
+      }
+
+      setup();
+      addInputs();
+      trainModel();
+    </script> -->
+  </body>
+</html>

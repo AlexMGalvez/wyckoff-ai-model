@@ -1,0 +1,27 @@
+<html>
+  <head>
+    <title>WyckoffAI</title>
+    <!-- used to supress favicon error -->
+    <link rel="shortcut icon" href="#" />
+  </head>
+  <body>
+    <h2>Home</h2>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
+    <script src="static/model.js"></script>
+
+    <script>
+      async function run() {
+        const data = <%- JSON.stringify(data) %>;
+        //const padMax = Math.max(...data.map((el) => el.x.length));
+        const padMax = 128;
+        const model = await trainModel(data, padMax);
+        const [expectedResults, validationResults] = makePredictions(data, model, padMax);
+        console.log("Expected results: " + expectedResults);
+        console.log("Validation results: " + validationResults);
+      }
+
+      run();
+    </script>
+  </body>
+</html>
