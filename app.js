@@ -8,9 +8,7 @@ app.set("view engine", "ejs");
 app.use("/static", express.static('./static/'));
 
 app.get("/", function (req, res) {
-  let accumulations = readFiles("./data/accumulations");
-  let false_accumulations = readFiles("./data/false_accumulations");
-  let data = [...accumulations, ...false_accumulations];
+  let data = readFiles();
   res.render("home", { data });
 });
 

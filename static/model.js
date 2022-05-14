@@ -5,6 +5,7 @@ async function trainModel(data, padMax) {
   const specialChar = -10;
 
   const inputLayerNeurons = 64;
+  //padMax = 128 in this example
   const inputLayerShape = [2, padMax]; // equals the maximum sized time series set (# of days) in the data
   const rnnOutputNeurons = 16;
   const rnnInputShape = [16, 4];
@@ -13,7 +14,7 @@ async function trainModel(data, padMax) {
   const nLayers = 4;
   const learningRate = 0.01;
   const batchSize = 32;
-  const nEpochs = 100;
+  const nEpochs = 50;
 
   const rnn_input_layer_features = 16;
   const rnn_input_layer_timesteps = inputLayerNeurons / rnn_input_layer_features;
@@ -28,12 +29,16 @@ async function trainModel(data, padMax) {
       X[i][0].push(specialChar);
       X[i][1].push(specialChar);
     }
-    Y.push(data[i].accumulation);
+    //Y.push(data[i].accumulation);
+    Y.push(data[i].accumulation == 0 ? [1,0,0,0]
+      : data[i].accumulation == 1 ? [0,1,0,0]
+      : data[i].accumulation == 2 ? [0,0,1,0]
+      : [0,0,0,1]);
   }
 
   const inputTensor = tf.tensor3d(X);
   //const labelTensor = tf.tensor3d(Y, [Y.length, 1, 1]);
-  const labelTensor = tf.tensor1d(Y);
+  const labelTensor = tf.tensor2d(Y);
 
   const xs = normalizeTensorFit(inputTensor, paddingArray, inputLayerShape[1]); // labelTensor is already normalized
 
@@ -55,11 +60,11 @@ async function trainModel(data, padMax) {
   //   })
   // );
 
-  model.add(tf.layers.reshape({targetShape: [2,128]}));
+  model.add(tf.layers.reshape({targetShape: [2,150]}));
   
 
   let lstmCells = [];
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < 4; i++) {
     lstmCells.push(tf.layers.lstmCell({ units: 16 }));
   }
   //model.summary()
@@ -80,7 +85,7 @@ async function trainModel(data, padMax) {
 
  //model.add(tf.layers.reshape({targetShape: [16]}));
 
-  model.add(tf.layers.dense({ units: 1}));
+  model.add(tf.layers.dense({ units: 4}));
 
   //model.add(tf.layers.dense({ units: 1 }));
   model.summary()
@@ -114,7 +119,7 @@ function makePredictions(data, model, padMax) {
   let Y = [];
   let paddingArray = []; // array of padding starting indexes
   const specialChar = -10;
-  const inputLayerShape = [2, 107]; // equals the maximum sized time series set (# of days) in the data
+  const inputLayerShape = [2, 150]; // equals the maximum sized time series set (# of days) in the data
 
   for (let i = 0; i < data.length; i++) {
     X.push([[...data[i].y], [...data[i].z]]);
@@ -124,7 +129,11 @@ function makePredictions(data, model, padMax) {
       X[i][0].push(specialChar);
       X[i][1].push(specialChar);
     }
-    Y.push(data[i].accumulation);
+    //Y.push(data[i].accumulation);
+    Y.push(data[i].accumulation == 0 ? [1,0,0,0]
+      : data[i].accumulation == 1 ? [0,1,0,0]
+      : data[i].accumulation == 2 ? [0,0,1,0]
+      : [0,0,0,1]);
   }
 
   const inputTensor = tf.tensor3d(X);
@@ -134,7 +143,8 @@ function makePredictions(data, model, padMax) {
   const model_out = model.predict(normalizedInput);
   //const predictedResults = unNormalizeTensor(model_out, dict_normalize["labelMax"], dict_normalize["labelMin"]);
 
-  return [Y, Array.from(model_out.dataSync())];
+  //return [Y, Array.from(model_out.dataSync())];
+  return [Y, model_out.arraySync()];
 }
 
 function normalizeTensorFit(tensor, paddingArray, padMax) {

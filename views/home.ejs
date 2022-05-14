@@ -2,7 +2,7 @@
   <head>
     <title>WyckoffAI</title>
     <!-- used to supress favicon error -->
-    <link rel="shortcut icon" href="#" />
+    <link rel="shortcut icon" href="/sdfse" />
   </head>
   <body>
     <h2>Home</h2>
@@ -13,12 +13,23 @@
     <script>
       async function run() {
         const data = <%- JSON.stringify(data) %>;
+        const trainingData = data.slice(0, -2);
+        const validationData = data.slice(-4);
         //const padMax = Math.max(...data.map((el) => el.x.length));
-        const padMax = 128;
-        const model = await trainModel(data, padMax);
-        const [expectedResults, validationResults] = makePredictions(data, model, padMax);
-        console.log("Expected results: " + expectedResults);
-        console.log("Validation results: " + validationResults);
+
+        const padMax = 150;
+        const model = await trainModel(trainingData, padMax);
+        const [expectedResults, validationResults] = makePredictions(validationData, model, padMax);
+        // for (let i = 0; i< expectedResults.length; i++) {
+        //   console.log("Expected results: " + expectedResults[i]);
+        //   console.log("");
+        // }
+        console.log("Validation data: ");
+        console.log(validationData);
+        console.log("Expected results: ");
+        console.log(expectedResults);
+        console.log("Validation results: ");
+        console.log(validationResults);
       }
 
       run();
