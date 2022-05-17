@@ -8,21 +8,54 @@ var papa = require("papaparse");
   -Data begins on the second row
   -Blank lines are automatically disregarded
 */
-const fileToObj = (file, name, accumulation) => {
+const fileToObj = (file, name, accumulationStatus) => {
   const csvFile = fs.readFileSync(file, "utf8");
   const parsedFile = papa.parse(csvFile).data;
+  const csvBenchFile = fs.readFileSync(
+    "./data/market_benchmark/^IXIC1971-02-05.csv",
+    "utf8"
+  );
+  const parsedBenchFile = papa.parse(csvBenchFile).data;
   let date = [];
-  let closingPrice = [];
-  let volume = [];
+  let stockClosingPrice = [];
+  let stockVolume = [];
+  let benchClosingPrice = [];
+  let benchVolume = [];
+
+  // read stock pattern file
   for (let i = 1; i < parsedFile.length; i++) {
     if (parsedFile[i].length != 1) {
       date.push(parsedFile[i][0]);
-      closingPrice.push(parseFloat(parsedFile[i][4]));
-      volume.push(parseInt(parsedFile[i][6]));
+      stockClosingPrice.push(parseFloat(parsedFile[i][4]));
+      stockVolume.push(parseInt(parsedFile[i][6]));
     }
   }
 
-  const content = { name, accumulation, x: date, y: closingPrice, z: volume };
+  // O(n) search for starting date can be optimized
+  let j = 0;
+  while (parsedBenchFile[j][0] != date[0]) {
+    j++;
+  }
+
+  // read market benchmark file
+  while (parsedBenchFile[j][0] != date.at(-1)) {
+    benchClosingPrice.push(parseFloat(parsedBenchFile[j][4]));
+    // no volume data before 1984-10-11
+    benchVolume.push(parseInt(parsedBenchFile[j][6]));
+    j++;
+  }
+  benchClosingPrice.push(parseFloat(parsedBenchFile[j][4]));
+  benchVolume.push(parseInt(parsedBenchFile[j][6]));
+
+  const content = {
+    name,
+    accumulationStatus,
+    dates: date,
+    f1: stockClosingPrice,
+    f2: stockVolume,
+    f3: benchClosingPrice,
+    f4: benchVolume,
+  };
 
   // // write stock object to file
   // fs.writeFile("test.txt", JSON.stringify(content), (err) => {
@@ -85,13 +118,24 @@ const iterateAccumFolder = (path) => {
 
 /*
   Converts all the csv data from the /data folder into an array of data objects
+
+  returns an array of stock pattern objects with properties:
+    -name (str)
+    -accumulationStatus (int)
+    -dates (array of strs)
+    -feature 1: closing prices (array of floats)
+    -feature 2: volumes (array of ints)
+    -feature 3: benchmark closing prices (array of floats)
+    -feature 4: benchmark volumes (array of ints)
+
+    fileData = [{name, accumulationStatus, dates: [...], f1: [...], f2: [...], f3: [...], f4: [...]}, ...];
 */
 const readFiles = () => {
-  let accumulation = 0; // 0 marks a false accumulation pattern
+  let accumulationStatus = 0; // 0 marks a false accumulation pattern
   let fileData = [
     ...iterateAccumFolder("./data/accumulations/from_first_sc/"),
     ...iterateAccumFolder("./data/accumulations/from_lowest_sc(DEFAULT)/"),
-    ...iterateLowFolder("./data/false_accumulations/", accumulation),
+    ...iterateLowFolder("./data/false_accumulations/", accumulationStatus),
   ];
   return fileData;
 };
