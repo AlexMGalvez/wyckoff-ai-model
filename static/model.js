@@ -32,13 +32,13 @@ async function trainModel(data, padMax) {
     }
     //Y.push(data[i].accumulation);
     Y.push(
-      data[i].accumulation == 0
+      data[i].accumulation == 0 // false accumulation pattern
         ? [1, 0, 0, 0]
-        : data[i].accumulation == 1
-        ? [0, 1, 0, 0]
-        : data[i].accumulation == 2
+        : data[i].accumulation == 1 // true accumulation pattern ending at a spring in phase C
+        ? [0, 1, 0, 0] 
+        : data[i].accumulation == 2 // true accumulation pattern ending at a last point of support in phase D
         ? [0, 0, 1, 0]
-        : [0, 0, 0, 1]
+        : [0, 0, 0, 1] // true accumulation pattern ending at a secondary test in phase B
     );
   }
 
@@ -133,7 +133,7 @@ async function trainModel(data, padMax) {
 
 const callback = (epoch, log) => {
   console.log("Epoch: " + epoch);
-  console.log("Loss: " + log.loss);
+  console.log(log);
 };
 
 function makePredictions(data, model, padMax) {
@@ -167,15 +167,15 @@ function makePredictions(data, model, padMax) {
   const normalizedInput = normalizeTensorFit(inputTensor, paddingArray, padMax);
   // const predictedResults = model.predict(tf.tensor2d(X, [X.length, X[0].length]).div(tf.scalar(10))).mul(10); // old method
 
-  const model_out = model.predict(normalizedInput);
-  //const predictedResults = unNormalizeTensor(model_out, dict_normalize["labelMax"], dict_normalize["labelMin"]);
+  const modelOut = model.predict(normalizedInput);
+  //const predictedResults = unNormalizeTensor(modelOut, dict_normalize["labelMax"], dict_normalize["labelMin"]);
 
-  //return [Y, Array.from(model_out.dataSync())];
+  //return [Y, Array.from(modelOut.dataSync())];
 
   inputTensor.dispose();
   normalizedInput.dispose();
 
-  return [Y, model_out.arraySync()];
+  return [Y, modelOut];
 }
 
 function normalizeTensorFit(tensor, paddingArray, padMax) {
