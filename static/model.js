@@ -17,7 +17,8 @@ async function trainModel(data, padMax) {
   const nEpochs = 50;
 
   const rnn_input_layer_features = 16;
-  const rnn_input_layer_timesteps = inputLayerNeurons / rnn_input_layer_features;
+  const rnn_input_layer_timesteps =
+    inputLayerNeurons / rnn_input_layer_features;
   const rnn_input_shape = [rnn_input_layer_features, rnn_input_layer_timesteps];
 
   // reformat data into X and Y arrays
@@ -30,10 +31,15 @@ async function trainModel(data, padMax) {
       X[i][1].push(specialChar);
     }
     //Y.push(data[i].accumulation);
-    Y.push(data[i].accumulation == 0 ? [1,0,0,0]
-      : data[i].accumulation == 1 ? [0,1,0,0]
-      : data[i].accumulation == 2 ? [0,0,1,0]
-      : [0,0,0,1]);
+    Y.push(
+      data[i].accumulation == 0
+        ? [1, 0, 0, 0]
+        : data[i].accumulation == 1
+        ? [0, 1, 0, 0]
+        : data[i].accumulation == 2
+        ? [0, 0, 1, 0]
+        : [0, 0, 0, 1]
+    );
   }
 
   const inputTensor = tf.tensor3d(X);
@@ -60,39 +66,48 @@ async function trainModel(data, padMax) {
   //   })
   // );
 
-  model.add(tf.layers.reshape({targetShape: [2,150]}));
-  
+  model.add(tf.layers.reshape({ targetShape: [2, 150] }));
 
   let lstmCells = [];
-  for (let i = 0; i < 4; i++) {
-    lstmCells.push(tf.layers.lstmCell({ units: 16 }));
+  for (let i = 0; i < 2; i++) {
+    lstmCells.push(tf.layers.lstmCell({ units: 8 }));
   }
-  //model.summary()
+
   model.add(
     tf.layers.rnn({
       cell: lstmCells,
       //inputShape: [16,16],
       returnSequences: false,
+      activation: 'relu'
     })
   );
 
   // model.add(
   //   tf.layers.dense({
-  //     units: outputLayerNeurons,
-  //     targetShape: [16],
+  //     units: 16,
   //   })
   // );
 
- //model.add(tf.layers.reshape({targetShape: [16]}));
+  //model.add(tf.layers.reshape({targetShape: [16]}));
 
-  model.add(tf.layers.dense({ units: 4}));
+  model.add(tf.layers.dense({ units: 4, activation: 'softmax' }));
 
   //model.add(tf.layers.dense({ units: 1 }));
-  model.summary()
+
+  model.summary();
   model.compile({
-    optimizer: tf.train.adam(learningRate),
-    loss: "meanSquaredError",
+    optimizer: tf.train.sgd(learningRate),
+    loss: "categoricalCrossentropy",
   });
+
+  // ## weight adjustment / debugging
+
+  // for (let i = 0; i < model.layers.length; i++) {
+  //   console.log(model.layers[i].trainableWeights)
+  // }
+  // model.layers[3].setWeights([tf.zeros([6,2]), tf.zeros([6, 2])])
+  // model.layers[3].getWeights()[0].print();
+  // model.layers[3].getWeights()[1].print();
 
   // ## fit model
 
@@ -130,10 +145,15 @@ function makePredictions(data, model, padMax) {
       X[i][1].push(specialChar);
     }
     //Y.push(data[i].accumulation);
-    Y.push(data[i].accumulation == 0 ? [1,0,0,0]
-      : data[i].accumulation == 1 ? [0,1,0,0]
-      : data[i].accumulation == 2 ? [0,0,1,0]
-      : [0,0,0,1]);
+    Y.push(
+      data[i].accumulation == 0
+        ? [1, 0, 0, 0]
+        : data[i].accumulation == 1
+        ? [0, 1, 0, 0]
+        : data[i].accumulation == 2
+        ? [0, 0, 1, 0]
+        : [0, 0, 0, 1]
+    );
   }
 
   const inputTensor = tf.tensor3d(X);
