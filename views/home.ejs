@@ -14,22 +14,22 @@
       async function run() {
         const data = <%- JSON.stringify(data) %>;
         const trainingData = data.slice(0, -2);
-        const validationData = data.slice(-4);
+        const testingData = data.slice(-4);
         //const padMax = Math.max(...data.map((el) => el.x.length));
 
         const padMax = 150;
         const model = await trainModel(trainingData, padMax);
-        const [expectedResults, validationResults] = makePredictions(validationData, model, padMax);
+        const [expectedResults, testingResults] = makePredictions(testingData, model, padMax);
         // for (let i = 0; i< expectedResults.length; i++) {
         //   console.log("Expected results: " + expectedResults[i]);
         //   console.log("");
         // }
-        console.log("Validation data: ");
-        console.log(validationData);
+        console.log("Testing data: ");
+        console.log(testingData);
         console.log("Expected results: ");
         console.log(expectedResults);
-        console.log("Validation results: ");
-        console.log(validationResults);
+        console.log("Testing results: ");
+        console.log(testingResults);
 
         // for (let i = 0; i < model.layers.length; i++) {
         //   console.log(model.layers[i].trainableWeights)

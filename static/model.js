@@ -12,9 +12,9 @@ async function trainModel(data, padMax) {
   const outputLayerNeurons = 1;
   const outputLayerShape = 16;
   const nLayers = 4;
-  const learningRate = 0.01;
+  const learningRate = 0.2;
   const batchSize = 32;
-  const nEpochs = 50;
+  const nEpochs = 150;
 
   const rnn_input_layer_features = 16;
   const rnn_input_layer_timesteps =
@@ -44,9 +44,11 @@ async function trainModel(data, padMax) {
 
   const inputTensor = tf.tensor3d(X);
   //const labelTensor = tf.tensor3d(Y, [Y.length, 1, 1]);
-  const labelTensor = tf.tensor2d(Y);
 
-  const xs = normalizeTensorFit(inputTensor, paddingArray, inputLayerShape[1]); // labelTensor is already normalized
+  const xs = normalizeTensorFit(inputTensor, paddingArray, inputLayerShape[1]);
+  const ys = tf.tensor2d(Y); // labelTensor (ys) is already normalized
+
+  inputTensor.dispose();
 
   // ## define model
   const model = tf.sequential();
@@ -97,7 +99,7 @@ async function trainModel(data, padMax) {
   model.summary();
   model.compile({
     optimizer: tf.train.sgd(learningRate),
-    loss: "categoricalCrossentropy",
+    loss: "categoricalCrossentropy"
   });
 
   // ## weight adjustment / debugging
@@ -111,9 +113,11 @@ async function trainModel(data, padMax) {
 
   // ## fit model
 
-  const hist = await model.fit(xs, labelTensor, {
+  const hist = await model.fit(xs, ys, {
     batchSize: batchSize,
     epochs: nEpochs,
+    validationSplit: 0.1,
+    shuffle: true,
     callbacks: {
       onEpochEnd: async (epoch, log) => {
         callback(epoch, log);
@@ -121,12 +125,15 @@ async function trainModel(data, padMax) {
     },
   });
 
+  xs.dispose();
+  ys.dispose();
+
   return model;
 }
 
 const callback = (epoch, log) => {
   console.log("Epoch: " + epoch);
-  console.log(log);
+  console.log("Loss: " + log.loss);
 };
 
 function makePredictions(data, model, padMax) {
@@ -164,6 +171,10 @@ function makePredictions(data, model, padMax) {
   //const predictedResults = unNormalizeTensor(model_out, dict_normalize["labelMax"], dict_normalize["labelMin"]);
 
   //return [Y, Array.from(model_out.dataSync())];
+
+  inputTensor.dispose();
+  normalizedInput.dispose();
+
   return [Y, model_out.arraySync()];
 }
 
@@ -198,6 +209,11 @@ function normalizeTensorFit(tensor, paddingArray, padMax) {
       normalizedVolumesTensor.pad([[0, padMax - paddingArray[i]]], -10),
     ]);
     normalizedTensors.push(normalizedStockTensor);
+
+    pricesTensor.dispose();
+    volumesTensor.dispose();
+    normalizedPricesTensor.dispose();
+    normalizedVolumesTensor.dispose();
     i++;
   });
 
