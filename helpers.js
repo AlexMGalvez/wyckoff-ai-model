@@ -24,7 +24,7 @@ const readFiles = () => {
   while ((dirent = dir.readSync()) !== null) {
     if (dirent.name.slice(-4) == ".ods") {
       // only read .ods files
-      filesData.push(readOdsFile(dirent.name));
+      filesData.push(...readOdsFile(dirent.name));
     }
   }
   dir.closeSync();
