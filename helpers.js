@@ -34,7 +34,7 @@ const readFiles = () => {
 /*
   Requirements for the format of a csv file:
   -Data begins on the second row
-  -Blank lines are automatically disregarded
+  -Blank lines are automatically ignored
 */
 const fileToObj = (fileName, accumulationStatus, fromDate, toDate) => {
   const csvFile = fs.readFileSync("./data/stock_csv_files/" + fileName, "utf8");
@@ -149,6 +149,21 @@ const fileToObj = (fileName, accumulationStatus, fromDate, toDate) => {
   return content;
 };
 
+/*
+  Ods files return a number as a date. This function converts the number to a date string formatted as yyyy-mm-dd.
+*/
+const getDateStr = (dateNum) => {
+  const get2Digits = (num) => {
+    if (num < 10) {
+      return '0' + num;
+    }
+    return num;
+  }
+  const dateObj = XLSX.SSF.parse_date_code(Math.ceil(dateNum));
+  const dateStr = dateObj.y.toString() + "-" + get2Digits(dateObj.m) + "-" + get2Digits(dateObj.d);
+  return dateStr;
+}
+
 const readOdsFile = (filename) => {
   const workbook = XLSX.readFile("./data/stock_ods_files/" + filename);
   const firstSheetName = workbook.SheetNames[0];
@@ -182,14 +197,14 @@ const readOdsFile = (filename) => {
     }
     if (typeof data[i][0] != "undefined") {
       // from lowest sc (default)
-      fromDate = data[i][0];
+      fromDate = getDateStr(data[i][0]);
       if (typeof data[i][2] != "undefined") {
         // to low of spring (default)
-        toDate = data[i][2];
+        toDate = getDateStr(data[i][2]);
         accumulationStatus = 1;
       } else if (typeof data[i][3] != "undefined") {
         // to an st
-        toDate = data[i][3];
+        toDate = getDateStr(data[i][3]);
         accumulationStatus = 2;
       }
       fileData.push(
@@ -197,14 +212,14 @@ const readOdsFile = (filename) => {
       );
     } else if (typeof data[i][1] != "undefined") {
       // from first but lower sc
-      fromDate = data[i][1];
+      fromDate = getDateStr(data[i][1]);
       if (typeof data[i][2] != "undefined") {
         // to low of spring (default)
-        toDate = data[i][2];
+        toDate = getDateStr(data[i][2]);
         accumulationStatus = 1;
       } else if (typeof data[i][3] != "undefined") {
         // to an st
-        toDate = data[i][3];
+        toDate = getDateStr(data[i][3]);
         accumulationStatus = 2;
       }
       fileData.push(fileToObj(csvFileName, accumulationStatus, fromDate, toDate));
@@ -217,8 +232,8 @@ const readOdsFile = (filename) => {
   i = i + 2;
   while (data[i][0] != "END") {
     if (typeof data[i][0] != "undefined" && typeof data[i][1] != "undefined") {
-      fromDate = data[i][0];
-      toDate = data[i][1];
+      fromDate = getDateStr(data[i][0]);
+      toDate = getDateStr(data[i][1]);
       accumulationStatus = 0;
       fileData.push(fileToObj(csvFileName, accumulationStatus, fromDate, toDate));
     }
