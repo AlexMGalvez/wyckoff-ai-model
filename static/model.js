@@ -1,11 +1,7 @@
-async function trainModel(data, padMax) {
-  let X = [];
-  let Y = [];
-  let paddingArray = []; // array of padding starting indexes
-  const specialChar = -10;
+const specialChar = -10;
 
+async function trainModel(data, padMax) {
   const inputLayerNeurons = 64;
-  //padMax = 128 in this example
   const inputLayerShape = [4, padMax]; // equals the maximum sized time series set (# of days) in the data
   const rnnOutputNeurons = 16;
   const rnnInputShape = [16, 4];
@@ -21,33 +17,8 @@ async function trainModel(data, padMax) {
     inputLayerNeurons / rnn_input_layer_features;
   const rnn_input_shape = [rnn_input_layer_features, rnn_input_layer_timesteps];
 
-  // reformat data into X and Y arrays
-  for (let i = 0; i < data.length; i++) {
-    X.push([
-      [...data[i].f1],
-      [...data[i].f2],
-      [...data[i].f3],
-      [...data[i].f4],
-    ]);
-    paddingArray.push(X[i][0].length);
-    // provide padding for short length arrays
-    for (let j = X[i][0].length; j < inputLayerShape[1]; j++) {
-      X[i][0].push(specialChar);
-      X[i][1].push(specialChar);
-      X[i][2].push(specialChar);
-      X[i][3].push(specialChar);
-    }
-    //Y.push(data[i].accumulationStatus);
-    Y.push(
-      data[i].accumulationStatus == 0 // false accumulation pattern
-        ? [1, 0, 0, 0]
-        : data[i].accumulationStatus == 1 // true accumulation pattern ending at a spring in phase C
-        ? [0, 1, 0, 0]
-        : data[i].accumulationStatus == 2 // true accumulation pattern ending at a last point of support in phase D
-        ? [0, 0, 1, 0]
-        : [0, 0, 0, 1] // true accumulation pattern ending at a secondary test in phase B
-    );
-  }
+  const [ X, Y, paddingArray ] = reformatRawData(data, specialChar, inputLayerShape);
+  
   // returns: X = [[[stockClosing floats], [stockVolume ints], [benchClosing floats], [benchVolume ints]], ...];
   const inputTensor = tf.tensor3d(X);
   //const labelTensor = tf.tensor3d(Y, [Y.length, 1, 1]);
@@ -60,7 +31,7 @@ async function trainModel(data, padMax) {
   // ## define model
   const model = tf.sequential();
 
-  model.add(tf.layers.masking({ inputShape: inputLayerShape, maskValue: -10 }));
+  model.add(tf.layers.masking({ inputShape: inputLayerShape, maskValue: specialChar }));
   model.add(tf.layers.flatten({ inputShape: inputLayerShape })); // flatten 2d input layer into 1d for the dense layer
 
   // model.add(
@@ -75,7 +46,7 @@ async function trainModel(data, padMax) {
   //   })
   // );
 
-  model.add(tf.layers.reshape({ targetShape: [4, 150] }));
+  model.add(tf.layers.reshape({ targetShape: inputLayerShape }));
 
   let lstmCells = [];
   for (let i = 0; i < 4; i++) {
@@ -99,7 +70,7 @@ async function trainModel(data, padMax) {
 
   //model.add(tf.layers.reshape({targetShape: [16]}));
 
-  model.add(tf.layers.dense({ units: 4, activation: "softmax" }));
+  model.add(tf.layers.dense({ units: 3, activation: "softmax" }));
 
   //model.add(tf.layers.dense({ units: 1 }));
 
@@ -144,11 +115,39 @@ const callback = (epoch, log) => {
 };
 
 function makePredictions(data, model, padMax) {
+  const inputLayerShape = [2, padMax]; // equals the maximum sized time series set (# of days) in the data
+  const [ X, Y, paddingArray ] = reformatRawData(data, specialChar, inputLayerShape);
+  const inputTensor = tf.tensor3d(X);
+  const normalizedInput = normalizeTensorFit(inputTensor, paddingArray, padMax);
+  // const predictedResults = model.predict(tf.tensor2d(X, [X.length, X[0].length]).div(tf.scalar(10))).mul(10); // old method
+
+  const modelOut = model.predict(normalizedInput);
+  //const predictedResults = unNormalizeTensor(modelOut, dict_normalize["labelMax"], dict_normalize["labelMin"]);
+
+  //return [Y, Array.from(modelOut.dataSync())];
+
+  inputTensor.dispose();
+  normalizedInput.dispose();
+
+  return [Y, modelOut];
+}
+
+/*
+  Reformat raw data into X and Y arrays for feeding into the neural network, and provide a padding index array.
+
+  Returns:
+    X is defined as an input array of stock pattern arrays, each stock array containing 4 feature arrays of padMax length.
+    X = [[feature1 array, feature2 array, feature3 array, feature4 array], ...]
+
+    Y is defined as an output array containing one hot encoded arrays representing the output of each stock. Ex: [0, 1, 0]
+    Y = [[num, num, num], ...]
+
+    paddingArray is an array of numbers representing the indexes of each stock where padding begins.
+*/
+const reformatRawData = (data, specialChar, inputLayerShape) => {
   let X = [];
   let Y = [];
-  let paddingArray = []; // array of padding starting indexes
-  const specialChar = -10;
-  const inputLayerShape = [2, 150]; // equals the maximum sized time series set (# of days) in the data
+  let paddingArray = [];
 
   for (let i = 0; i < data.length; i++) {
     X.push([
@@ -165,31 +164,15 @@ function makePredictions(data, model, padMax) {
       X[i][2].push(specialChar);
       X[i][3].push(specialChar);
     }
-    //Y.push(data[i].accumulationStatus);
     Y.push(
-      data[i].accumulationStatus == 0
-        ? [1, 0, 0, 0]
-        : data[i].accumulationStatus == 1
-        ? [0, 1, 0, 0]
-        : data[i].accumulationStatus == 2
-        ? [0, 0, 1, 0]
-        : [0, 0, 0, 1]
+      data[i].accumulationStatus == 0 // false accumulation pattern
+        ? [1, 0, 0]
+        : data[i].accumulationStatus == 1 // accumulation pattern ending at a spring in phase C
+        ? [0, 1, 0]
+        : [0, 0, 1] // incomplete accumulation pattern ending at a secondary test in phase B
     );
   }
-
-  const inputTensor = tf.tensor3d(X);
-  const normalizedInput = normalizeTensorFit(inputTensor, paddingArray, padMax);
-  // const predictedResults = model.predict(tf.tensor2d(X, [X.length, X[0].length]).div(tf.scalar(10))).mul(10); // old method
-
-  const modelOut = model.predict(normalizedInput);
-  //const predictedResults = unNormalizeTensor(modelOut, dict_normalize["labelMax"], dict_normalize["labelMin"]);
-
-  //return [Y, Array.from(modelOut.dataSync())];
-
-  inputTensor.dispose();
-  normalizedInput.dispose();
-
-  return [Y, modelOut];
+  return [X, Y, paddingArray];
 }
 
 function normalizeTensorFit(tensor, paddingArray, padMax) {

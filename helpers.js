@@ -21,12 +21,16 @@ const readFiles = () => {
   let dirent;
   let filesData = [];
 
+  console.log("Gathering data...");
   while ((dirent = dir.readSync()) !== null) {
     if (dirent.name.slice(-4) == ".ods") {
       // only read .ods files
       filesData.push(...readOdsFile(dirent.name));
     }
   }
+  console.log("Data gathering complete.");
+  console.log("");
+
   dir.closeSync();
   return filesData;
 };
@@ -155,14 +159,19 @@ const fileToObj = (fileName, accumulationStatus, fromDate, toDate) => {
 const getDateStr = (dateNum) => {
   const get2Digits = (num) => {
     if (num < 10) {
-      return '0' + num;
+      return "0" + num;
     }
     return num;
-  }
+  };
   const dateObj = XLSX.SSF.parse_date_code(Math.ceil(dateNum));
-  const dateStr = dateObj.y.toString() + "-" + get2Digits(dateObj.m) + "-" + get2Digits(dateObj.d);
+  const dateStr =
+    dateObj.y.toString() +
+    "-" +
+    get2Digits(dateObj.m) +
+    "-" +
+    get2Digits(dateObj.d);
   return dateStr;
-}
+};
 
 const readOdsFile = (filename) => {
   const workbook = XLSX.readFile("./data/stock_ods_files/" + filename);
@@ -222,7 +231,9 @@ const readOdsFile = (filename) => {
         toDate = getDateStr(data[i][3]);
         accumulationStatus = 2;
       }
-      fileData.push(fileToObj(csvFileName, accumulationStatus, fromDate, toDate));
+      fileData.push(
+        fileToObj(csvFileName, accumulationStatus, fromDate, toDate)
+      );
     }
     i++;
   }
@@ -235,11 +246,15 @@ const readOdsFile = (filename) => {
       fromDate = getDateStr(data[i][0]);
       toDate = getDateStr(data[i][1]);
       accumulationStatus = 0;
-      fileData.push(fileToObj(csvFileName, accumulationStatus, fromDate, toDate));
+      fileData.push(
+        fileToObj(csvFileName, accumulationStatus, fromDate, toDate)
+      );
     }
     i++;
   }
   return fileData;
 };
 
-module.exports = readFiles;
+module.exports = {
+  readFiles,
+};
