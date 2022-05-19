@@ -14,7 +14,7 @@ async function trainModel(data, padMax) {
   const nLayers = 4;
   const learningRate = 0.2;
   const batchSize = 32;
-  const nEpochs = 100;
+  const nEpochs = 25;
 
   const rnn_input_layer_features = 16;
   const rnn_input_layer_timesteps =
@@ -78,7 +78,7 @@ async function trainModel(data, padMax) {
   model.add(tf.layers.reshape({ targetShape: [4, 150] }));
 
   let lstmCells = [];
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < 4; i++) {
     lstmCells.push(tf.layers.lstmCell({ units: 8 }));
   }
 

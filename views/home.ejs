@@ -5,33 +5,31 @@
     <link rel="shortcut icon" href="/sdfse" />
   </head>
   <body>
-    <h2>Home</h2>
+    <h2>Wyckoff Ai Model</h2>
 
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
     <script src="static/model.js"></script>
 
     <script>
-      async function run() {
+      const run = async () => {
         const data = <%- JSON.stringify(data) %>;
-        shuffle(data);
-        const trainingData = data.slice(0, -2);
-        const testingData = data.slice(-4);
-        const patternClassifications = ["No accumulation", "Phase C", "Phase D", "Phase B"];
-        //const padMax = Math.max(...data.map((el) => el.x.length));
+        console.log(data);
+        // shuffle(data);
+        // const trainingData = data.slice(0, -2);
+        // const testingData = data.slice(-4);
+        // const patternClassifications = ["No accumulation", "Phase C", "Phase D", "Phase B"];
+        // //const padMax = Math.max(...data.map((el) => el.x.length));
 
-        const padMax = 150;
-        const model = await trainModel(trainingData, padMax);
-        const [expectedResults, modelOut] = makePredictions(testingData, model, padMax);
-        // for (let i = 0; i< expectedResults.length; i++) {
-        //   console.log("Expected results: " + expectedResults[i]);
-        //   console.log("");
-        // }
-        console.log("Testing data: ");
-        console.log(testingData);
-        console.log("Expected results: ");
-        console.log(expectedResults);
-        console.log("Testing results: ");
-        console.log(modelOut.arraySync());
+        // const padMax = 150;
+        // const model = await trainModel(trainingData, padMax);
+        // const [expectedResults, modelOut] = makePredictions(testingData, model, padMax);
+        // console.log("Testing data: ");
+        // console.log(testingData);
+        // console.log("Expected results: ");
+        // console.log(expectedResults);
+        // console.log("Testing results: ");
+        // console.log(modelOut.arraySync());
+
         // for (let i = 0; i <  modelOut.arraySync().length; i++) {
         //   console.log("Pattern classification: " + patternClassifications[modelOut.argMax(1).arraySync()[i]]);
         // }
@@ -44,7 +42,7 @@
         //model.layers[3].getWeights()[1].print();
       }
 
-      function shuffle(array) {
+      const shuffle = (array) => {
         let currentIndex = array.length,  randomIndex;
 
         while (currentIndex != 0) {

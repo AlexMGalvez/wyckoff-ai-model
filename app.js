@@ -2,7 +2,7 @@ let readFiles = require("./helpers.js");
 let express = require("express");
 let app = express();
 let fs = require("fs");
-const PORT = "1235";
+const PORT = "1245";
 
 app.set("view engine", "ejs");
 app.use("/static", express.static('./static/'));
