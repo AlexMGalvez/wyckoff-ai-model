@@ -1,82 +1,86 @@
 const specialChar = -10;
+const inputLayerNeurons = 64;
+let inputLayerShape = [4];
+const rnnOutputNeurons = 16;
+const rnnInputShape = [16, 4];
+const outputLayerNeurons = 1;
+const outputLayerShape = 16;
+const nLayers = 4;
+const learningRate = 0.04556645082430197;
+const batchSize = 32;
+const nEpochs = 250;
+const rnn_input_layer_features = 16;
+const rnn_input_layer_timesteps = inputLayerNeurons / rnn_input_layer_features;
+const rnn_input_shape = [rnn_input_layer_features, rnn_input_layer_timesteps];
 
-async function trainModel(data, padMax) {
-  const inputLayerNeurons = 64;
-  const inputLayerShape = [4, padMax]; // equals the maximum sized time series set (# of days) in the data
-  const rnnOutputNeurons = 16;
-  const rnnInputShape = [16, 4];
-  const outputLayerNeurons = 1;
-  const outputLayerShape = 16;
-  const nLayers = 4;
-  const learningRate = 0.2;
-  const batchSize = 32;
-  const nEpochs = 25;
-
-  const rnn_input_layer_features = 16;
-  const rnn_input_layer_timesteps =
-    inputLayerNeurons / rnn_input_layer_features;
-  const rnn_input_shape = [rnn_input_layer_features, rnn_input_layer_timesteps];
-
-  const [ X, Y, paddingArray ] = reformatRawData(data, specialChar, inputLayerShape);
-  
-  // returns: X = [[[stockClosing floats], [stockVolume ints], [benchClosing floats], [benchVolume ints]], ...];
-  const inputTensor = tf.tensor3d(X);
-  //const labelTensor = tf.tensor3d(Y, [Y.length, 1, 1]);
-
-  const xs = normalizeTensorFit(inputTensor, paddingArray, inputLayerShape[1]);
-  const ys = tf.tensor2d(Y); // labelTensor (ys) is already normalized
-
-  inputTensor.dispose();
-
-  // ## define model
-  const model = tf.sequential();
-
-  model.add(tf.layers.masking({ inputShape: inputLayerShape, maskValue: specialChar }));
-  model.add(tf.layers.flatten({ inputShape: inputLayerShape })); // flatten 2d input layer into 1d for the dense layer
-
-  // model.add(
-  //   tf.layers.dense({
-  //     units: inputLayerNeurons,
-  //   })
-  // );
-
-  // model.add(
-  //   tf.layers.dense({
-  //     units: 256
-  //   })
-  // );
-
-  model.add(tf.layers.reshape({ targetShape: inputLayerShape }));
-
-  let lstmCells = [];
-  for (let i = 0; i < 4; i++) {
-    lstmCells.push(tf.layers.lstmCell({ units: 8 }));
+/*
+  Runs trials for finding the optimal loss function, epoch number, and learning rate
+*/
+const runTrials = async (xs, ys) => {
+  const optimizers = {
+    sgd: tf.train.sgd,
+    adagrad: tf.train.adagrad,
+    adam: tf.train.adam,
+    adamax: tf.train.adamax,
+    rmsprop: tf.train.rmsprop,
   }
 
-  model.add(
-    tf.layers.rnn({
-      cell: lstmCells,
-      //inputShape: [16,16],
-      returnSequences: false,
-      activation: "relu",
-    })
+  const space = {
+    epochs: hpjs.quniform(50, 250, 50),
+    learningRate: hpjs.loguniform(-4*Math.log(10), -1*Math.log(10)),
+    optimizer: hpjs.choice(['sgd', 'adagrad', 'adam', 'adamax',           
+     'rmsprop'])
+  };
+
+  const optFunction = async ({ optimizer, epochs }, { xs, ys }) => {
+    const model = createModel();
+    model.compile({
+      optimizer: optimizers[optimizer](learningRate),
+      loss: "categoricalCrossentropy",
+    });
+  
+    // train model using defined data
+    const h = await model.fit(xs, ys, {
+      batchSize: batchSize,
+      epochs,
+      validationSplit: 0.1,
+      shuffle: true
+    });
+  
+    //print out each optimizer and its loss
+    console.log(optimizer, h.history.loss[h.history.loss.length - 1]);
+    // return the model, loss, and status, which is necessary
+    return {
+      model,
+      loss: h.history.loss[h.history.loss.length - 1],
+      status: hpjs.STATUS_OK,
+    };
+  };
+  
+  const trials = await hpjs.fmin(
+    optFunction,
+    space,
+    hpjs.search.randomSearch,
+    6,
+    { rng: new hpjs.RandomState(654321), xs, ys }
   );
+  const opt = trials.argmin;
 
-  // model.add(
-  //   tf.layers.dense({
-  //     units: 16,
-  //   })
-  // );
+  // displaying data for best optimizer and epochs, as well as a prediction
+  console.log(`Best Optimizer: ${opt.optimizer}`);
+  console.log(`Best Epochs: ${opt.epochs}`);
+   console.log(`Best Learning Rate: ${opt.learningRate}`);
+  const { model } = await optFunction(opt, { xs, ys });
+  return model;
+}
 
-  //model.add(tf.layers.reshape({targetShape: [16]}));
+const runOptimized = async (xs, ys) => {
+ // ## define model
+  const model = createModel();
 
-  model.add(tf.layers.dense({ units: 3, activation: "softmax" }));
-
-  //model.add(tf.layers.dense({ units: 1 }));
-
-  model.summary();
+  // compile model
   model.compile({
-    optimizer: tf.train.sgd(learningRate),
+    optimizer: tf.train.adagrad(learningRate),
     loss: "categoricalCrossentropy",
   });
 
@@ -91,7 +95,7 @@ async function trainModel(data, padMax) {
 
   // ## fit model
 
-  const hist = await model.fit(xs, ys, {
+  const h = await model.fit(xs, ys, {
     batchSize: batchSize,
     epochs: nEpochs,
     validationSplit: 0.1,
@@ -102,21 +106,66 @@ async function trainModel(data, padMax) {
       },
     },
   });
+  return model;
+}
 
-  xs.dispose();
-  ys.dispose();
+const trainModel = async (data, padMax) => {
+  inputLayerShape.push(padMax);
+  const [X, Y, paddingArray] = reformatRawData(
+    data,
+    specialChar,
+    inputLayerShape
+  );
+  const inputTensor = tf.tensor3d(X);
+
+  const xs = normalizeTensorFit(inputTensor, paddingArray, inputLayerShape[1]);
+  const ys = tf.tensor2d(Y); // labelTensor (ys) is already normalized
+  inputTensor.dispose();
+
+  const model = runTrials(xs, ys);
+  //const model = runOptimized(xs, ys);
+ 
+  // xs.dispose();
+  // ys.dispose();
 
   return model;
 }
+
+const createModel = () => {
+  const model = tf.sequential();
+  model.add(
+    tf.layers.masking({ inputShape: inputLayerShape, maskValue: specialChar })
+  );
+  model.add(tf.layers.flatten({ inputShape: inputLayerShape })); // flatten 2d input layer into 1d for the dense layer
+  model.add(tf.layers.reshape({ targetShape: inputLayerShape }));
+  let lstmCells = [];
+  for (let i = 0; i < 2; i++) {
+    lstmCells.push(tf.layers.lstmCell({ units: 256 }));
+  }
+  model.add(
+    tf.layers.rnn({
+      cell: lstmCells,
+      //inputShape: [16,16],
+      //returnSequences: false,
+      activation: "relu",
+    })
+  );
+  model.add(tf.layers.dense({ units: 3, activation: "softmax" }));
+  return model;
+};
 
 const callback = (epoch, log) => {
   console.log("Epoch: " + epoch);
   console.log(log);
 };
 
-function makePredictions(data, model, padMax) {
+const makePredictions = (data, model, padMax) => {
   const inputLayerShape = [2, padMax]; // equals the maximum sized time series set (# of days) in the data
-  const [ X, Y, paddingArray ] = reformatRawData(data, specialChar, inputLayerShape);
+  const [X, Y, paddingArray] = reformatRawData(
+    data,
+    specialChar,
+    inputLayerShape
+  );
   const inputTensor = tf.tensor3d(X);
   const normalizedInput = normalizeTensorFit(inputTensor, paddingArray, padMax);
   // const predictedResults = model.predict(tf.tensor2d(X, [X.length, X[0].length]).div(tf.scalar(10))).mul(10); // old method
@@ -133,7 +182,7 @@ function makePredictions(data, model, padMax) {
 }
 
 /*
-  Reformat raw data into X and Y arrays for feeding into the neural network, and provide a padding index array.
+  Reformats raw data into X and Y arrays for feeding into the neural network and provides a padding index array.
 
   Returns:
     X is defined as an input array of stock pattern arrays, each stock array containing 4 feature arrays of padMax length.
@@ -173,9 +222,9 @@ const reformatRawData = (data, specialChar, inputLayerShape) => {
     );
   }
   return [X, Y, paddingArray];
-}
+};
 
-function normalizeTensorFit(tensor, paddingArray, padMax) {
+const normalizeTensorFit = (tensor, paddingArray, padMax) => {
   let i = 0;
   let normalizedTensors = [];
   tf.unstack(tensor).forEach((stockTensor) => {

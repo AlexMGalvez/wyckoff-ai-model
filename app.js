@@ -1,7 +1,7 @@
 let express = require("express");
 let app = express();
 let fs = require("fs");
-const PORT = "1245";
+const PORT = "1235";
 const helpers = require("./helpers.js");
 const readFiles = helpers.readFiles;
 
@@ -15,5 +15,5 @@ app.get("/", function (req, res) {
 
 app.listen(PORT, function (err) {
   if (err) console.log(err);
-  console.log("Server listening on PORT", PORT);
+  console.log("Server listening on PORT", PORT, "\n");
 });
