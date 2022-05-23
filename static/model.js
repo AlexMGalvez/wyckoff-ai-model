@@ -6,9 +6,9 @@ const rnnInputShape = [16, 4];
 const outputLayerNeurons = 1;
 const outputLayerShape = 16;
 const nLayers = 4;
-const learningRate = 0.04556645082430197;
+const learningRate = 0.07755610490268464;
 const batchSize = 32;
-const nEpochs = 250;
+const nEpochs = 50;
 const rnn_input_layer_features = 16;
 const rnn_input_layer_timesteps = inputLayerNeurons / rnn_input_layer_features;
 const rnn_input_shape = [rnn_input_layer_features, rnn_input_layer_timesteps];
@@ -43,7 +43,7 @@ const runTrials = async (xs, ys) => {
     const h = await model.fit(xs, ys, {
       batchSize: batchSize,
       epochs,
-      validationSplit: 0.1,
+      validationSplit: 0.25,
       shuffle: true
     });
   
@@ -69,18 +69,16 @@ const runTrials = async (xs, ys) => {
   // displaying data for best optimizer and epochs, as well as a prediction
   console.log(`Best Optimizer: ${opt.optimizer}`);
   console.log(`Best Epochs: ${opt.epochs}`);
-   console.log(`Best Learning Rate: ${opt.learningRate}`);
+  console.log(`Best Learning Rate: ${opt.learningRate}`);
   const { model } = await optFunction(opt, { xs, ys });
   return model;
 }
 
 const runOptimized = async (xs, ys) => {
- // ## define model
   const model = createModel();
 
-  // compile model
   model.compile({
-    optimizer: tf.train.adagrad(learningRate),
+    optimizer: tf.train.sgd(learningRate),
     loss: "categoricalCrossentropy",
   });
 
@@ -93,12 +91,10 @@ const runOptimized = async (xs, ys) => {
   // model.layers[3].getWeights()[0].print();
   // model.layers[3].getWeights()[1].print();
 
-  // ## fit model
-
-  const h = await model.fit(xs, ys, {
+  const history = await model.fit(xs, ys, {
     batchSize: batchSize,
     epochs: nEpochs,
-    validationSplit: 0.1,
+    validationSplit: 0.25,
     shuffle: true,
     callbacks: {
       onEpochEnd: async (epoch, log) => {
@@ -106,7 +102,8 @@ const runOptimized = async (xs, ys) => {
       },
     },
   });
-  return model;
+
+  return [model, history];
 }
 
 const trainModel = async (data, padMax) => {
@@ -122,13 +119,12 @@ const trainModel = async (data, padMax) => {
   const ys = tf.tensor2d(Y); // labelTensor (ys) is already normalized
   inputTensor.dispose();
 
-  const model = runTrials(xs, ys);
-  //const model = runOptimized(xs, ys);
- 
+  //const model = runTrials(xs, ys);
+  const [model, history] = await runOptimized(xs, ys);
   // xs.dispose();
   // ys.dispose();
 
-  return model;
+  return [model, history];
 }
 
 const createModel = () => {
@@ -136,7 +132,7 @@ const createModel = () => {
   model.add(
     tf.layers.masking({ inputShape: inputLayerShape, maskValue: specialChar })
   );
-  model.add(tf.layers.flatten({ inputShape: inputLayerShape })); // flatten 2d input layer into 1d for the dense layer
+  model.add(tf.layers.flatten({ inputShape: inputLayerShape }));
   model.add(tf.layers.reshape({ targetShape: inputLayerShape }));
   let lstmCells = [];
   for (let i = 0; i < 2; i++) {

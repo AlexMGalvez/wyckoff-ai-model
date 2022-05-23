@@ -1,6 +1,6 @@
-var fs = require("fs");
-var papa = require("papaparse");
-var XLSX = require("xlsx");
+let fs = require("fs");
+let papa = require("papaparse");
+let XLSX = require("xlsx");
 
 /*
   Maps all the stock pattern .ods files content with the historic stock .csv files data and converts it into an array of data objects
