@@ -62,7 +62,7 @@ const fileToObj = (fileName, accumulationStatus, fromDate, toDate) => {
     i++;
   }
 
-  if (parsedFile[i] == "undefined") {
+  if (typeof parsedFile[i] == "undefined") {
     throw (
       "Error: The given fromDate '" +
       fromDate +
@@ -81,7 +81,7 @@ const fileToObj = (fileName, accumulationStatus, fromDate, toDate) => {
     i++;
   }
 
-  if (parsedFile[i] == "undefined") {
+  if (typeof parsedFile[i] == "undefined") {
     throw (
       "Error: The given toDate '" +
       toDate +
@@ -107,7 +107,7 @@ const fileToObj = (fileName, accumulationStatus, fromDate, toDate) => {
     j++;
   }
 
-  if (parsedBenchFile[j] == "undefined") {
+  if (typeof parsedBenchFile[j] == "undefined") {
     throw (
       "Error: The given fromDate '" +
       fromDate +
@@ -127,7 +127,7 @@ const fileToObj = (fileName, accumulationStatus, fromDate, toDate) => {
     j++;
   }
 
-  if (parsedBenchFile[j] == "undefined") {
+  if (typeof parsedBenchFile[j] == "undefined") {
     throw (
       "Error: The given toDate '" +
       toDate +

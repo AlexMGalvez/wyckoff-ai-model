@@ -151,7 +151,7 @@ const createModel = () => {
       mask_zero: true
     })
   );
-  model.add(tf.layers.dropout({ rate: 0.25 }));
+  model.add(tf.layers.dropout({ rate: 0.5 }));
   model.add(tf.layers.dense({ units: 3, activation: "softmax" }));
   return model;
 };
