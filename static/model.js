@@ -1,4 +1,4 @@
-const specialChar = -10;
+const specialChar = 0;
 const inputLayerNeurons = 64;
 let inputLayerShape = [4];
 const rnnOutputNeurons = 16;
@@ -76,6 +76,7 @@ const runTrials = async (xs, ys) => {
 
 const runOptimized = async (xs, ys) => {
   const model = createModel();
+  model.summary();
 
   model.compile({
     optimizer: tf.train.sgd(learningRate),
@@ -128,15 +129,18 @@ const trainModel = async (data, padMax) => {
 }
 
 const createModel = () => {
+  //const unitsPerLayer = [512, 256, 256, 256, 128]; 
+  const unitsPerLayer = [256, 256, 256, 128]; 
+
   const model = tf.sequential();
   model.add(
     tf.layers.masking({ inputShape: inputLayerShape, maskValue: specialChar })
   );
-  model.add(tf.layers.flatten({ inputShape: inputLayerShape }));
-  model.add(tf.layers.reshape({ targetShape: inputLayerShape }));
+  // model.add(tf.layers.flatten({ inputShape: inputLayerShape }));
+  // model.add(tf.layers.reshape({ targetShape: inputLayerShape }));
   let lstmCells = [];
-  for (let i = 0; i < 2; i++) {
-    lstmCells.push(tf.layers.lstmCell({ units: 256 }));
+  for (let i = 0; i < unitsPerLayer.length-1; i++) {
+    lstmCells.push(tf.layers.lstmCell({ units: unitsPerLayer[i] }));
   }
   model.add(
     tf.layers.rnn({
@@ -144,8 +148,10 @@ const createModel = () => {
       //inputShape: [16,16],
       //returnSequences: false,
       activation: "relu",
+      mask_zero: true
     })
   );
+  model.add(tf.layers.dropout({ rate: 0.25 }));
   model.add(tf.layers.dense({ units: 3, activation: "softmax" }));
   return model;
 };
@@ -271,10 +277,10 @@ const normalizeTensorFit = (tensor, paddingArray, padMax) => {
 
     //let padMax = Math.max(...paddingArray);
     let normalizedStockTensor = tf.stack([
-      normalizedStockPricesTensor.pad([[0, padMax - paddingArray[i]]], -10),
-      normalizedStockVolumesTensor.pad([[0, padMax - paddingArray[i]]], -10),
-      normalizedBenchPricesTensor.pad([[0, padMax - paddingArray[i]]], -10),
-      normalizedBenchVolumesTensor.pad([[0, padMax - paddingArray[i]]], -10),
+      normalizedStockPricesTensor.pad([[0, padMax - paddingArray[i]]], specialChar),
+      normalizedStockVolumesTensor.pad([[0, padMax - paddingArray[i]]], specialChar),
+      normalizedBenchPricesTensor.pad([[0, padMax - paddingArray[i]]], specialChar),
+      normalizedBenchVolumesTensor.pad([[0, padMax - paddingArray[i]]], specialChar),
     ]);
     normalizedTensors.push(normalizedStockTensor);
 
