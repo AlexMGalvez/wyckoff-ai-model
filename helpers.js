@@ -54,6 +54,18 @@ const fileToObj = (fileName, accumulationStatus, fromDate, toDate) => {
   let benchClosingPrice = [];
   let benchVolume = [];
 
+  if (toDate < fromDate) {
+    throw (
+      "Error: The given fromDate '" +
+      fromDate +
+      "' from the " +
+      fileName.slice(0, -3) +
+      "ods" +
+      " file occurs later than the given toDate '" +
+      toDate + "'"
+    );
+}
+
   // O(n) search of stock and market benchmark files can be optimized
 
   // read stock file
