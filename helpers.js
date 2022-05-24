@@ -1,3 +1,4 @@
+const ERROR_TYPES = ["row formating", "date comparison", "fromDate file matching", "toDate file matching"];
 let fs = require("fs");
 let papa = require("papaparse");
 let XLSX = require("xlsx");
@@ -54,17 +55,7 @@ const fileToObj = (fileName, accumulationStatus, fromDate, toDate) => {
   let benchClosingPrice = [];
   let benchVolume = [];
 
-  if (toDate < fromDate) {
-    throw (
-      "Error: The given fromDate '" +
-      fromDate +
-      "' from the " +
-      fileName.slice(0, -3) +
-      "ods" +
-      " file occurs later than the given toDate '" +
-      toDate + "'"
-    );
-}
+  errorHandling("date comparison", fileName, [toDate, fromDate]);
 
   // O(n) search of stock and market benchmark files can be optimized
 
@@ -74,17 +65,7 @@ const fileToObj = (fileName, accumulationStatus, fromDate, toDate) => {
     i++;
   }
 
-  if (typeof parsedFile[i] == "undefined") {
-    throw (
-      "Error: The given fromDate '" +
-      fromDate +
-      "' from the " +
-      fileName.slice(0, -3) +
-      "ods" +
-      " file does not occur in " +
-      fileName
-    );
-  }
+  errorHandling("fromDate file matching", fileName, [parsedFile[i], fromDate]);
 
   while (typeof parsedFile[i] != "undefined" && parsedFile[i][0] != toDate) {
     date.push(parsedFile[i][0]);
@@ -93,17 +74,7 @@ const fileToObj = (fileName, accumulationStatus, fromDate, toDate) => {
     i++;
   }
 
-  if (typeof parsedFile[i] == "undefined") {
-    throw (
-      "Error: The given toDate '" +
-      toDate +
-      "' from the " +
-      fileName.slice(0, -3) +
-      "ods" +
-      " file does not occur in " +
-      fileName
-    );
-  }
+  errorHandling("toDate file matching", fileName, [parsedFile[i], toDate]);
 
   date.push(parsedFile[i][0]);
   stockClosingPrice.push(parseFloat(parsedFile[i][4]));
@@ -119,16 +90,7 @@ const fileToObj = (fileName, accumulationStatus, fromDate, toDate) => {
     j++;
   }
 
-  if (typeof parsedBenchFile[j] == "undefined") {
-    throw (
-      "Error: The given fromDate '" +
-      fromDate +
-      "' from the " +
-      fileName.slice(0, -3) +
-      "ods" +
-      " file does not occur in the market benchmark csv file"
-    );
-  }
+  errorHandling("fromDate file matching", "the market benchmark csv file", [parsedBenchFile[i], fromDate]);
 
   while (
     typeof parsedBenchFile[j] != "undefined" &&
@@ -139,16 +101,7 @@ const fileToObj = (fileName, accumulationStatus, fromDate, toDate) => {
     j++;
   }
 
-  if (typeof parsedBenchFile[j] == "undefined") {
-    throw (
-      "Error: The given toDate '" +
-      toDate +
-      "' from the " +
-      fileName.slice(0, -3) +
-      "ods" +
-      " file does not occur in the market benchmark csv file"
-    );
-  }
+  errorHandling("toDate file matching", "the market benchmark csv file", [parsedBenchFile[i], toDate]);
 
   benchClosingPrice.push(parseFloat(parsedBenchFile[j][4]));
   benchVolume.push(parseInt(parsedBenchFile[j][6]));
@@ -200,22 +153,8 @@ const readOdsFile = (filename) => {
   }
   i = i + 3;
   while (data[i][0] != "END") {
-    if (
-      (typeof data[i][0] != "undefined" && typeof data[i][1] != "undefined") ||
-      (typeof data[i][2] != "undefined" && typeof data[i][3] != "undefined") ||
-      (typeof data[i][0] != "undefined" &&
-        typeof data[i][2] == "undefined" &&
-        typeof data[i][3] == "undefined") ||
-      (typeof data[i][1] != "undefined" &&
-        typeof data[i][2] == "undefined" &&
-        typeof data[i][3] == "undefined")
-    ) {
-      throw (
-        "Error: " +
-        csvFileName +
-        " has a row thats incorrectly formatted. An accumulations row must have one 'from' date and one 'to' date."
-      );
-    }
+    errorHandling("row formating", csvFileName, data[i]);
+
     if (typeof data[i][0] != "undefined") {
       // from lowest sc (default)
       fromDate = getDateStr(data[i][0]);
@@ -265,6 +204,71 @@ const readOdsFile = (filename) => {
     i++;
   }
   return fileData;
+};
+
+const errorHandling = (errorType, fileName, content) => {
+  if (errorType == ERROR_TYPES[0]) {
+    let cell = content;
+    if (
+      (typeof cell[0] != "undefined" && typeof cell[1] != "undefined") ||
+      (typeof cell[2] != "undefined" && typeof cell[3] != "undefined") ||
+      (typeof cell[0] != "undefined" &&
+        typeof cell[2] == "undefined" &&
+        typeof cell[3] == "undefined") ||
+      (typeof cell[1] != "undefined" &&
+        typeof cell[2] == "undefined" &&
+        typeof cell[3] == "undefined")
+    ) {
+      throw (
+        "Error: " +
+        fileName +
+        " has a row thats incorrectly formatted. An accumulations row must have one 'from' date and one 'to' date."
+      );
+    }
+  }
+  else if (errorType == ERROR_TYPES[1]) {
+    [toDate, fromDate] = content;
+    if (toDate < fromDate) {
+      throw (
+        "Error: The given fromDate '" +
+        fromDate +
+        "' from the " +
+        fileName.slice(0, -3) +
+        "ods" +
+        " file occurs later than the given toDate '" +
+        toDate +
+        "'"
+      );
+    }
+  }
+  else if (errorType == ERROR_TYPES[2]) {
+    [fileLine, fromDate] = content;
+    if (typeof fileLine == "undefined") {
+      throw (
+        "Error: The given fromDate '" +
+        fromDate +
+        "' from the " +
+        fileName.slice(0, -3) +
+        "ods" +
+        " file does not occur in " +
+        fileName
+      );
+    }
+  }
+  else if (errorType == ERROR_TYPES[3]) {
+    [fileLine, toDate] = content;
+    if (typeof fileLine == "undefined") {
+      throw (
+        "Error: The given toDate '" +
+        toDate +
+        "' from the " +
+        fileName.slice(0, -3) +
+        "ods" +
+        " file does not occur in " +
+        fileName
+      );
+    }
+  }
 };
 
 module.exports = {
