@@ -1,4 +1,9 @@
-const ERROR_TYPES = ["row formating", "date comparison", "fromDate file matching", "toDate file matching"];
+const ERROR_TYPES = [
+  "row formating",
+  "date comparison",
+  "fromDate file matching",
+  "toDate file matching",
+];
 let fs = require("fs");
 let papa = require("papaparse");
 let XLSX = require("xlsx");
@@ -40,10 +45,12 @@ const readFiles = () => {
   Requirements for the format of a csv file:
   -Data begins on the second row
   -Blank lines are automatically ignored
+
+  Receives file data of a stock's patterns and converts it to an array of stock pattern objects. This function is called for every stock .csv file
 */
-const fileToObj = (fileName, accumulationStatus, fromDate, toDate) => {
+const fileToObjs = (fileName, fileData) => {
   const csvFile = fs.readFileSync("./data/stock_csv_files/" + fileName, "utf8");
-  const parsedFile = papa.parse(csvFile).data;
+  const parsedStockFile = papa.parse(csvFile).data;
   const csvBenchFile = fs.readFileSync(
     "./data/market_benchmark/^IXIC1971-02-05.csv",
     "utf8"
@@ -54,68 +61,103 @@ const fileToObj = (fileName, accumulationStatus, fromDate, toDate) => {
   let stockVolume = [];
   let benchClosingPrice = [];
   let benchVolume = [];
+  let fileContent = [];
 
-  errorHandling("date comparison", fileName, [toDate, fromDate]);
+  let i1, j1, i2, j2, stockContent;
+  i1 = 0;
+  i2 = 0;
 
-  // O(n) search of stock and market benchmark files can be optimized
+  for (let k in fileData) {
+    // STOCK FILE
+    while (
+      typeof parsedStockFile[i1] != "undefined" &&
+      parsedStockFile[i1][0] != fileData[k].fromDate
+    ) {
+      i1++;
+    }
 
-  // read stock file
-  let i = 0;
-  while (typeof parsedFile[i] != "undefined" && parsedFile[i][0] != fromDate) {
-    i++;
+    // checks if fromDate was not found in file
+    errorHandling("fromDate file matching", fileName, [
+      parsedStockFile[i1],
+      fileData[k].fromDate,
+    ]);
+
+    // fromDate found in file
+    j1 = i1;
+    while (
+      typeof parsedStockFile[j1] != "undefined" &&
+      parsedStockFile[j1][0] != fileData[k].toDate
+    ) {
+      date.push(parsedStockFile[j1][0]);
+      stockClosingPrice.push(parseFloat(parsedStockFile[j1][4]));
+      stockVolume.push(parseInt(parsedStockFile[j1][6]));
+      j1++;
+    }
+
+    // checks if toDate was not found in file
+    errorHandling("toDate file matching", fileName, [
+      parsedStockFile[j1],
+      fileData[k].toDate,
+    ]);
+
+    // else adds the last line from the file
+    date.push(parsedStockFile[j1][0]);
+    stockClosingPrice.push(parseFloat(parsedStockFile[j1][4]));
+    stockVolume.push(parseInt(parsedStockFile[j1][6]));
+
+    // BENCHMARK FILE
+    while (
+      typeof parsedBenchFile[i2] != "undefined" &&
+      parsedBenchFile[i2][0] != fileData[k].fromDate
+    ) {
+      i2++;
+    }
+
+    // checks if fromDate was not found in file
+    errorHandling("fromDate file matching", "the market benchmark csv file", [
+      parsedBenchFile[i2],
+      fileData[k].fromDate,
+    ]);
+
+    // fromDate found in file
+    j2 = i2;
+    while (
+      typeof parsedBenchFile[j2] != "undefined" &&
+      parsedBenchFile[j2][0] != fileData[k].toDate
+    ) {
+      benchClosingPrice.push(parseFloat(parsedBenchFile[j2][4]));
+      benchVolume.push(parseInt(parsedBenchFile[j2][6]));
+      j2++;
+    }
+
+    // checks if toDate was not found in file
+    errorHandling("toDate file matching", "the market benchmark csv file", [
+      parsedBenchFile[j2],
+      fileData[k].toDate,
+    ]);
+
+    // else adds the last line from the file
+    benchClosingPrice.push(parseFloat(parsedBenchFile[j2][4]));
+    benchVolume.push(parseInt(parsedBenchFile[j2][6]));
+
+    stockContent = {
+      name: fileName.slice(0, -4),
+      accumulationStatus: fileData[k].accumulationStatus,
+      dates: date,
+      f1: stockClosingPrice,
+      f2: stockVolume,
+      f3: benchClosingPrice,
+      f4: benchVolume,
+    };
+    fileContent.push(stockContent);
+    date = [];
+    stockClosingPrice = [];
+    stockVolume = [];
+    benchClosingPrice = [];
+    benchVolume = [];
   }
 
-  errorHandling("fromDate file matching", fileName, [parsedFile[i], fromDate]);
-
-  while (typeof parsedFile[i] != "undefined" && parsedFile[i][0] != toDate) {
-    date.push(parsedFile[i][0]);
-    stockClosingPrice.push(parseFloat(parsedFile[i][4]));
-    stockVolume.push(parseInt(parsedFile[i][6]));
-    i++;
-  }
-
-  errorHandling("toDate file matching", fileName, [parsedFile[i], toDate]);
-
-  date.push(parsedFile[i][0]);
-  stockClosingPrice.push(parseFloat(parsedFile[i][4]));
-  stockVolume.push(parseInt(parsedFile[i][6]));
-
-  // read market benchmark file
-  // no volume data before 1984-10-11
-  let j = 0;
-  while (
-    typeof parsedBenchFile[j] != "undefined" &&
-    parsedBenchFile[j][0] != fromDate
-  ) {
-    j++;
-  }
-
-  errorHandling("fromDate file matching", "the market benchmark csv file", [parsedBenchFile[i], fromDate]);
-
-  while (
-    typeof parsedBenchFile[j] != "undefined" &&
-    parsedBenchFile[j][0] != toDate
-  ) {
-    benchClosingPrice.push(parseFloat(parsedBenchFile[j][4]));
-    benchVolume.push(parseInt(parsedBenchFile[j][6]));
-    j++;
-  }
-
-  errorHandling("toDate file matching", "the market benchmark csv file", [parsedBenchFile[i], toDate]);
-
-  benchClosingPrice.push(parseFloat(parsedBenchFile[j][4]));
-  benchVolume.push(parseInt(parsedBenchFile[j][6]));
-
-  const content = {
-    name: fileName.slice(0, -4),
-    accumulationStatus,
-    dates: date,
-    f1: stockClosingPrice,
-    f2: stockVolume,
-    f3: benchClosingPrice,
-    f4: benchVolume,
-  };
-  return content;
+  return fileContent;
 };
 
 /*
@@ -167,9 +209,8 @@ const readOdsFile = (filename) => {
         toDate = getDateStr(data[i][3]);
         accumulationStatus = 2;
       }
-      fileData.push(
-        fileToObj(csvFileName, accumulationStatus, fromDate, toDate)
-      );
+      errorHandling("date comparison", csvFileName, [toDate, fromDate]);
+      fileData.push({ accumulationStatus, fromDate, toDate });
     } else if (typeof data[i][1] != "undefined") {
       // from first but lower sc
       fromDate = getDateStr(data[i][1]);
@@ -182,9 +223,8 @@ const readOdsFile = (filename) => {
         toDate = getDateStr(data[i][3]);
         accumulationStatus = 2;
       }
-      fileData.push(
-        fileToObj(csvFileName, accumulationStatus, fromDate, toDate)
-      );
+      errorHandling("date comparison", csvFileName, [toDate, fromDate]);
+      fileData.push({ accumulationStatus, fromDate, toDate });
     }
     i++;
   }
@@ -197,13 +237,23 @@ const readOdsFile = (filename) => {
       fromDate = getDateStr(data[i][0]);
       toDate = getDateStr(data[i][1]);
       accumulationStatus = 0;
-      fileData.push(
-        fileToObj(csvFileName, accumulationStatus, fromDate, toDate)
-      );
+      errorHandling("date comparison", csvFileName, [toDate, fromDate]);
+      fileData.push({ accumulationStatus, fromDate, toDate });
     }
     i++;
   }
-  return fileData;
+
+  fileData.sort((a, b) => {
+    if (a.fromDate === b.fromDate) {
+      return a.toDate > b.toDate ? 1 : -1;
+    }
+    return a.fromDate > b.fromDate ? 1 : -1;
+  });
+
+  // iterate through sorted file data array, map values with .ods files and convert to stock objects array
+  //let fileStocks = [];
+
+  return fileToObjs(csvFileName, fileData);
 };
 
 const errorHandling = (errorType, fileName, content) => {
@@ -225,8 +275,8 @@ const errorHandling = (errorType, fileName, content) => {
         " has a row thats incorrectly formatted. An accumulations row must have one 'from' date and one 'to' date."
       );
     }
-  }
-  else if (errorType == ERROR_TYPES[1]) {
+  } else if (errorType == ERROR_TYPES[1]) {
+    // throw error if fromDate occurs after toDate
     [toDate, fromDate] = content;
     if (toDate < fromDate) {
       throw (
@@ -240,8 +290,7 @@ const errorHandling = (errorType, fileName, content) => {
         "'"
       );
     }
-  }
-  else if (errorType == ERROR_TYPES[2]) {
+  } else if (errorType == ERROR_TYPES[2]) {
     [fileLine, fromDate] = content;
     if (typeof fileLine == "undefined") {
       throw (
@@ -254,8 +303,7 @@ const errorHandling = (errorType, fileName, content) => {
         fileName
       );
     }
-  }
-  else if (errorType == ERROR_TYPES[3]) {
+  } else if (errorType == ERROR_TYPES[3]) {
     [fileLine, toDate] = content;
     if (typeof fileLine == "undefined") {
       throw (

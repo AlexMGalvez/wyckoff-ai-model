@@ -16,12 +16,12 @@
     <script>
       const run = async () => {
         let data = <%- JSON.stringify(data) %>;
-
         shuffle(data);
         const trainingData = data.slice(0, -6);
         const testingData = data.slice(-6);
         const patternClassifications = ["No accumulation", "Phase C", "Phase B"];
         const padMax = Math.max(...data.map((el) => el.dates.length));
+        
         console.log("Pad max: ", padMax);
         //const padMax = 400;
         const [model, history] = await trainModel(trainingData, padMax);
