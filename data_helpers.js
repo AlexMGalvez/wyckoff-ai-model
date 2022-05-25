@@ -250,9 +250,6 @@ const readOdsFile = (filename) => {
     return a.fromDate > b.fromDate ? 1 : -1;
   });
 
-  // iterate through sorted file data array, map values with .ods files and convert to stock objects array
-  //let fileStocks = [];
-
   return fileToObjs(csvFileName, fileData);
 };
 

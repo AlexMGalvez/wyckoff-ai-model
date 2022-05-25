@@ -2,8 +2,8 @@ let express = require("express");
 let app = express();
 let fs = require("fs");
 const PORT = "1235";
-const helpers = require("./helpers.js");
-const readFiles = helpers.readFiles;
+const dataHelpers = require("./data_helpers.js");
+const readFiles = dataHelpers.readFiles;
 
 app.set("view engine", "ejs");
 app.use("/static", express.static('./static/'));
