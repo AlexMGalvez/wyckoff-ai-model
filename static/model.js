@@ -122,8 +122,8 @@ const trainModel = async (data, padMax) => {
   console.log("numTensors before training: " + tf.memory().numTensors);
   //const model = runTrials(xs, ys);
   const [model, history] = await runOptimized(xs, ys);
-  // xs.dispose();
-  // ys.dispose();
+  xs.dispose();
+  ys.dispose();
 
   return [model, history];
 };
@@ -296,6 +296,14 @@ const normalizeTensorFit = (tensor, paddingArray, padMax) => {
     ]);
     normalizedTensors.push(normalizedStockTensor);
 
+    maxStockPrice.dispose();
+    minStockPrice.dispose();
+    maxStockVolume.dispose();
+    minStockVolume.dispose();
+    maxBenchPrice.dispose();
+    minBenchPrice.dispose();
+    maxBenchVolume.dispose();
+    minBenchVolume.dispose();
     stockPricesTensor.dispose();
     stockVolumesTensor.dispose();
     normalizedStockPricesTensor.dispose();
