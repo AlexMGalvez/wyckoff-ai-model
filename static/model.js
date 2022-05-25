@@ -23,13 +23,12 @@ const runTrials = async (xs, ys) => {
     adam: tf.train.adam,
     adamax: tf.train.adamax,
     rmsprop: tf.train.rmsprop,
-  }
+  };
 
   const space = {
     epochs: hpjs.quniform(50, 250, 50),
-    learningRate: hpjs.loguniform(-4*Math.log(10), -1*Math.log(10)),
-    optimizer: hpjs.choice(['sgd', 'adagrad', 'adam', 'adamax',           
-     'rmsprop'])
+    learningRate: hpjs.loguniform(-4 * Math.log(10), -1 * Math.log(10)),
+    optimizer: hpjs.choice(["sgd", "adagrad", "adam", "adamax", "rmsprop"]),
   };
 
   const optFunction = async ({ optimizer, epochs }, { xs, ys }) => {
@@ -38,15 +37,15 @@ const runTrials = async (xs, ys) => {
       optimizer: optimizers[optimizer](learningRate),
       loss: "categoricalCrossentropy",
     });
-  
+
     // train model using defined data
     const h = await model.fit(xs, ys, {
       batchSize: batchSize,
       epochs,
       validationSplit: 0.25,
-      shuffle: true
+      shuffle: true,
     });
-  
+
     //print out each optimizer and its loss
     console.log(optimizer, h.history.loss[h.history.loss.length - 1]);
     // return the model, loss, and status, which is necessary
@@ -56,7 +55,7 @@ const runTrials = async (xs, ys) => {
       status: hpjs.STATUS_OK,
     };
   };
-  
+
   const trials = await hpjs.fmin(
     optFunction,
     space,
@@ -72,7 +71,7 @@ const runTrials = async (xs, ys) => {
   console.log(`Best Learning Rate: ${opt.learningRate}`);
   const { model } = await optFunction(opt, { xs, ys });
   return model;
-}
+};
 
 const runOptimized = async (xs, ys) => {
   const model = createModel();
@@ -105,7 +104,7 @@ const runOptimized = async (xs, ys) => {
   });
 
   return [model, history];
-}
+};
 
 const trainModel = async (data, padMax) => {
   inputLayerShape.push(padMax);
@@ -120,17 +119,18 @@ const trainModel = async (data, padMax) => {
   const ys = tf.tensor2d(Y); // labelTensor (ys) is already normalized
   inputTensor.dispose();
 
+  console.log("numTensors before training: " + tf.memory().numTensors);
   //const model = runTrials(xs, ys);
   const [model, history] = await runOptimized(xs, ys);
   // xs.dispose();
   // ys.dispose();
 
   return [model, history];
-}
+};
 
 const createModel = () => {
-  //const unitsPerLayer = [512, 256, 256, 256, 128]; 
-  const unitsPerLayer = [256, 256, 256, 128]; 
+  //const unitsPerLayer = [512, 256, 256, 256, 128];
+  const unitsPerLayer = [256, 128];
 
   const model = tf.sequential();
   model.add(
@@ -139,7 +139,7 @@ const createModel = () => {
   // model.add(tf.layers.flatten({ inputShape: inputLayerShape }));
   // model.add(tf.layers.reshape({ targetShape: inputLayerShape }));
   let lstmCells = [];
-  for (let i = 0; i < unitsPerLayer.length-1; i++) {
+  for (let i = 0; i < unitsPerLayer.length - 1; i++) {
     lstmCells.push(tf.layers.lstmCell({ units: unitsPerLayer[i] }));
   }
   model.add(
@@ -148,7 +148,7 @@ const createModel = () => {
       //inputShape: [16,16],
       //returnSequences: false,
       activation: "relu",
-      mask_zero: true
+      mask_zero: true,
     })
   );
   model.add(tf.layers.dropout({ rate: 0.5 }));
@@ -181,7 +181,7 @@ const makePredictions = (data, model, padMax) => {
   normalizedInput.dispose();
 
   return [Y, modelOut];
-}
+};
 
 /*
   Reformats raw data into X and Y arrays for feeding into the neural network and provides a padding index array.
@@ -277,10 +277,22 @@ const normalizeTensorFit = (tensor, paddingArray, padMax) => {
 
     //let padMax = Math.max(...paddingArray);
     let normalizedStockTensor = tf.stack([
-      normalizedStockPricesTensor.pad([[0, padMax - paddingArray[i]]], specialChar),
-      normalizedStockVolumesTensor.pad([[0, padMax - paddingArray[i]]], specialChar),
-      normalizedBenchPricesTensor.pad([[0, padMax - paddingArray[i]]], specialChar),
-      normalizedBenchVolumesTensor.pad([[0, padMax - paddingArray[i]]], specialChar),
+      normalizedStockPricesTensor.pad(
+        [[0, padMax - paddingArray[i]]],
+        specialChar
+      ),
+      normalizedStockVolumesTensor.pad(
+        [[0, padMax - paddingArray[i]]],
+        specialChar
+      ),
+      normalizedBenchPricesTensor.pad(
+        [[0, padMax - paddingArray[i]]],
+        specialChar
+      ),
+      normalizedBenchVolumesTensor.pad(
+        [[0, padMax - paddingArray[i]]],
+        specialChar
+      ),
     ]);
     normalizedTensors.push(normalizedStockTensor);
 
@@ -297,4 +309,4 @@ const normalizeTensorFit = (tensor, paddingArray, padMax) => {
 
   let normalizedTensor = tf.stack(normalizedTensors);
   return normalizedTensor;
-}
+};
