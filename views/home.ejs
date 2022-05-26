@@ -23,7 +23,7 @@
         console.log("Data size: ", data.length);
         console.log("Pad max: ", padMax);
         const [model, history] = await trainModel(trainingData, padMax);
-        console.log('numTensors after training: ' + tf.memory().numTensors);
+        //console.log('numTensors after training: ' + tf.memory().numTensors);
         const [expectedResults, modelOut] = makePredictions(testingData, model, padMax);
         console.log("Testing data: ");
         console.log(testingData);
@@ -33,17 +33,6 @@
         console.log(modelOut.arraySync());
 
         plotLosses(history);
-
-
-       
-
-        // for (let i = 0; i < model.layers.length; i++) {
-        //   console.log(model.layers[i].trainableWeights)
-        // }
-        //model.layers[3].getWeights()[0].print();
-        //model.layers[3].getWeights()[1].print();
-
-
       }
 
       const shuffle = (array) => {

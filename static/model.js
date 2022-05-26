@@ -119,7 +119,7 @@ const trainModel = async (data, padMax) => {
   const ys = tf.tensor2d(Y); // labelTensor (ys) is already normalized
   inputTensor.dispose();
 
-  console.log("numTensors before training: " + tf.memory().numTensors);
+  //console.log("numTensors before training: " + tf.memory().numTensors);
   //const model = runTrials(xs, ys);
   const [model, history] = await runOptimized(xs, ys);
   xs.dispose();
@@ -129,7 +129,6 @@ const trainModel = async (data, padMax) => {
 };
 
 const createModel = () => {
-  //const unitsPerLayer = [512, 256, 256, 256, 128];
   const unitsPerLayer = [256, 128];
 
   const model = tf.sequential();
