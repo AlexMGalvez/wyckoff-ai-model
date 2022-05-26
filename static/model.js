@@ -8,7 +8,8 @@ const outputLayerShape = 16;
 const nLayers = 4;
 const learningRate = 0.07755610490268464;
 const batchSize = 32;
-const nEpochs = 50;
+//const nEpochs = 50;
+const nEpochs = 3;
 const rnn_input_layer_features = 16;
 const rnn_input_layer_timesteps = inputLayerNeurons / rnn_input_layer_features;
 const rnn_input_shape = [rnn_input_layer_features, rnn_input_layer_timesteps];
@@ -74,6 +75,11 @@ const runTrials = async (xs, ys) => {
 };
 
 const runOptimized = async (xs, ys) => {
+  const callback = (epoch, log) => {
+    console.log("Epoch: " + epoch);
+    console.log(log);
+  };
+
   const model = createModel();
   model.summary();
 
@@ -155,10 +161,10 @@ const createModel = () => {
   return model;
 };
 
-const callback = (epoch, log) => {
-  console.log("Epoch: " + epoch);
-  console.log(log);
-};
+const saveModel = async (model) => {
+  await model.save("downloads://wyckoff-ai-model");
+  console.log("Saving model and weights to the browser's downloads folder.")
+}
 
 const makePredictions = (data, model, padMax) => {
   const inputLayerShape = [2, padMax]; // equals the maximum sized time series set (# of days) in the data

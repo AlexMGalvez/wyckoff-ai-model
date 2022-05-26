@@ -17,7 +17,8 @@
       const run = async () => {
         let data = <%- JSON.stringify(data) %>;
         shuffle(data);
-        const trainingData = data.slice(0, -6);
+        //const trainingData = data.slice(0, -6);
+        const trainingData = data.slice(0, -150);
         const testingData = data.slice(-6); 
         const padMax = Math.max(...data.map((el) => el.dates.length));
         console.log("Data size: ", data.length);
@@ -33,6 +34,8 @@
         console.log(modelOut.arraySync());
 
         plotLosses(history);
+        
+        saveModel(model);
       }
 
       const shuffle = (array) => {
