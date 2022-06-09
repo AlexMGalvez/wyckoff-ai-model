@@ -17,25 +17,27 @@
       const run = async () => {
         let data = <%- JSON.stringify(data) %>;
         shuffle(data);
-        //const trainingData = data.slice(0, -6);
-        const trainingData = data.slice(0, -150);
+        const trainingData = data.slice(0, -6);
+        //const trainingData = data.slice(0, -150);
         const testingData = data.slice(-6); 
         const padMax = Math.max(...data.map((el) => el.dates.length));
-        console.log("Data size: ", data.length);
-        console.log("Pad max: ", padMax);
-        const [model, history] = await trainModel(trainingData, padMax);
-        //console.log('numTensors after training: ' + tf.memory().numTensors);
-        const [expectedResults, modelOut] = makePredictions(testingData, model, padMax);
-        console.log("Testing data: ");
-        console.log(testingData);
-        console.log("Expected results: ");
-        console.log(expectedResults);
-        console.log("Testing results: ");
-        console.log(modelOut.arraySync());
-
-        plotLosses(history);
+        console.log(trainingData[5], padMax)
         
-        saveModel(model);
+        // console.log("Data size: ", data.length);
+        // console.log("Pad max: ", padMax);
+        // const [model, history] = await trainModel(trainingData, padMax);
+        // //console.log('numTensors after training: ' + tf.memory().numTensors);
+        // const [expectedResults, modelOut] = makePredictions(testingData, model, padMax);
+        // console.log("Testing data: ");
+        // console.log(testingData);
+        // console.log("Expected results: ");
+        // console.log(expectedResults);
+        // console.log("Testing results: ");
+        // console.log(modelOut.arraySync());
+
+        // plotLosses(history);
+        
+        // saveModel(model);
       }
 
       const shuffle = (array) => {
