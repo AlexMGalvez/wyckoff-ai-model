@@ -16,27 +16,35 @@
     <script>
       const run = async () => {
         let data = <%- JSON.stringify(data) %>;
+        data = dataReducer(data, 500); // remove patterns from data with over 500 time points
         shuffle(data);
         const trainingData = data.slice(0, -6);
         const testingData = data.slice(-6); 
         const padMax = Math.max(...data.map((el) => el.dates.length));
 
-        
         console.log("Data size: ", data.length);
         console.log("Pad max: ", padMax);
-        const [model, history] = await trainModel(trainingData, padMax);
-        //console.log('numTensors after training: ' + tf.memory().numTensors);
-        const [expectedResults, modelOut] = makePredictions(testingData, model, padMax);
-        console.log("Testing data: ");
-        console.log(testingData);
-        console.log("Expected results: ");
-        console.log(expectedResults);
-        console.log("Testing results: ");
-        console.log(modelOut.arraySync());
+        // const [model, history] = await trainModel(trainingData, padMax);
+        // //console.log('numTensors after training: ' + tf.memory().numTensors);
+        // const [expectedResults, modelOut] = makePredictions(testingData, model, padMax);
+        // console.log("Testing data: ");
+        // console.log(testingData);
+        // console.log("Expected results: ");
+        // console.log(expectedResults);
+        // console.log("Testing results: ");
+        // console.log(modelOut.arraySync());
 
-        plotLosses(history);
+        // plotLosses(history);
         
         // saveModel(model);
+      }
+
+      const dataReducer = (array, max) => {
+        array.sort((a,b) => b.f1.length - a.f1.length)
+        while (array[0].f1.length > 500) {
+          array.shift();
+        }
+        return array;
       }
 
       const shuffle = (array) => {
