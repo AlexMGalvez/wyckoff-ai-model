@@ -8,8 +8,8 @@ const outputLayerShape = 16;
 const nLayers = 4;
 const learningRate = 0.07755610490268464;
 const batchSize = 32;
-//const nEpochs = 50;
-const nEpochs = 3;
+const nEpochs = 50;
+//const nEpochs = 3;
 const rnn_input_layer_features = 16;
 const rnn_input_layer_timesteps = inputLayerNeurons / rnn_input_layer_features;
 const rnn_input_shape = [rnn_input_layer_features, rnn_input_layer_timesteps];
@@ -135,7 +135,7 @@ const trainModel = async (data, padMax) => {
 };
 
 const createModel = () => {
-  const unitsPerLayer = [256, 128];
+  const unitsPerLayer = [512, 128];
 
   const model = tf.sequential();
   model.add(
