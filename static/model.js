@@ -9,8 +9,7 @@ const nLayers = 4;
 const learningRate = 0.07755610490268464;
 const batchSize = 32;
 const nEpochs = 50;
-//const nEpochs = 3;
-const rnn_input_layer_features = 16;
+const rnn_input_layer_features = 4;
 const rnn_input_layer_timesteps = inputLayerNeurons / rnn_input_layer_features;
 const rnn_input_shape = [rnn_input_layer_features, rnn_input_layer_timesteps];
 
@@ -135,7 +134,7 @@ const trainModel = async (data, padMax) => {
 };
 
 const createModel = () => {
-  const unitsPerLayer = [512, 128];
+  const unitsPerLayer = [256, 128];
 
   const model = tf.sequential();
   model.add(
@@ -157,7 +156,8 @@ const createModel = () => {
     })
   );
   model.add(tf.layers.dropout({ rate: 0.5 }));
-  model.add(tf.layers.dense({ units: 3, activation: "softmax" }));
+  // model.add(tf.layers.dense({ units: 256, activation: "relu" }));
+  model.add(tf.layers.dense({ units: 2, activation: "softmax" }));
   return model;
 };
 
@@ -220,12 +220,18 @@ const reformatRawData = (data, specialChar, inputLayerShape) => {
       X[i][2].push(specialChar);
       X[i][3].push(specialChar);
     }
+    // Y.push(
+    //   data[i].accumulationStatus == 0 // false accumulation pattern
+    //     ? [1, 0, 0]
+    //     : data[i].accumulationStatus == 1 // accumulation pattern ending at a spring in phase C
+    //     ? [0, 1, 0]
+    //     : [0, 0, 1] // incomplete accumulation pattern ending at a secondary test in phase B
+    // );
     Y.push(
       data[i].accumulationStatus == 0 // false accumulation pattern
-        ? [1, 0, 0]
-        : data[i].accumulationStatus == 1 // accumulation pattern ending at a spring in phase C
-        ? [0, 1, 0]
-        : [0, 0, 1] // incomplete accumulation pattern ending at a secondary test in phase B
+        ? [1, 0]
+         // accumulation pattern ending at a spring in phase C or in progress
+        : [0, 1]
     );
   }
   return [X, Y, paddingArray];
