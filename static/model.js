@@ -6,7 +6,7 @@ const rnnInputShape = [16, 4];
 const outputLayerNeurons = 1;
 const outputLayerShape = 16;
 const nLayers = 4;
-const learningRate = 0.07755610490268464;
+const learningRate = 0.04556645082430197;
 const batchSize = 32;
 const nEpochs = 50;
 const rnn_input_layer_features = 4;
@@ -17,6 +17,7 @@ const rnn_input_shape = [rnn_input_layer_features, rnn_input_layer_timesteps];
   Runs trials for finding the optimal loss function, epoch number, and learning rate
 */
 const runTrials = async (xs, ys) => {
+  console.log("Running trials...")
   const optimizers = {
     sgd: tf.train.sgd,
     adagrad: tf.train.adagrad,
@@ -83,7 +84,7 @@ const runOptimized = async (xs, ys) => {
   model.summary();
 
   model.compile({
-    optimizer: tf.train.sgd(learningRate),
+    optimizer: tf.train.adagrad(learningRate),
     loss: "categoricalCrossentropy",
   });
 
@@ -124,8 +125,8 @@ const trainModel = async (data, padMax) => {
   const ys = tf.tensor2d(Y); // labelTensor (ys) is already normalized
   inputTensor.dispose();
 
-  //console.log("numTensors before training: " + tf.memory().numTensors);
-  //const model = runTrials(xs, ys);
+  // const model = await runTrials(xs, ys);
+  // const history = null;
   const [model, history] = await runOptimized(xs, ys);
   xs.dispose();
   ys.dispose();
