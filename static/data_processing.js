@@ -1,12 +1,13 @@
+let fs = require("fs");
+let papa = require("papaparse");
+let XLSX = require("xlsx");
+
 const ERROR_TYPES = [
   "row formating",
   "date comparison",
   "fromDate file matching",
   "toDate file matching",
 ];
-let fs = require("fs");
-let papa = require("papaparse");
-let XLSX = require("xlsx");
 
 /*
   Maps all the stock pattern .ods files content with the historic stock .csv files data and converts it into an array of data objects
@@ -46,7 +47,7 @@ const readFiles = () => {
   -Data begins on the second row
   -Blank lines are automatically ignored
 
-  Receives file data of a stock's patterns and converts it to an array of stock pattern objects. This function is called for every stock .csv file
+  Receives file data of a given stock's patterns, and converts it to an array of stock pattern JS objects. This function is called for every stock .csv file
 */
 const fileToObjs = (fileName, fileData) => {
   const csvFile = fs.readFileSync("./data/stock_csv_files/" + fileName, "utf8");
@@ -146,8 +147,8 @@ const fileToObjs = (fileName, fileData) => {
       dates: date,
       f1: stockClosingPrice,
       f2: stockVolume,
-      f3: benchClosingPrice,
-      f4: benchVolume,
+      //f3: benchClosingPrice, // TODO: temporarily remove both features. Plan on using a running index instead
+      //f4: benchVolume,
     };
     fileContent.push(stockContent);
     date = [];
@@ -317,5 +318,5 @@ const errorHandling = (errorType, fileName, content) => {
 };
 
 module.exports = {
-  readFiles,
+  readFiles
 };

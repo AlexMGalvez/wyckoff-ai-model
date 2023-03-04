@@ -1,133 +1,58 @@
 <html>
+  <head>
+    <title>WyckoffAI</title>
+    <!-- used to supress favicon error -->
+    <link rel="shortcut icon" href="/sdfse" />
+    <script src="https://cdn.plot.ly/plotly-2.12.1.min.js"></script>
+  </head>
+  <body>
+    <h2>Wyckoff Ai Model</h2>
+    <div id="lossesPlot"></div>
 
-<head>
-  <title>WyckoffAI</title>
-  <!-- used to supress favicon error -->
-  <link rel="shortcut icon" href="/sdfse" />
-  <script src="https://cdn.plot.ly/plotly-2.12.1.min.js"></script>
-</head>
+    <!-- These script tags were used in an early version -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hyperparameters@latest/dist/hyperparameters.min.js"> </script> --> 
 
-<body>
-  <h2>Wyckoff Ai Model</h2>
-  <div id="lossesPlot"></div>
-
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/hyperparameters@latest/dist/hyperparameters.min.js"> </script>
-  <script src="static/model.js"></script>
-
-  <script>
-    const run = async () => {
-      let data = <%- JSON.stringify(data) %>;
-      data = dataReducer(data, 20, 400); // remove patterns outside min and max range
-      // data.forEach(e => console.log(e.dates.length))
-      shuffle(data);
-      const trainingData = data.slice(0, -10);
-      //const trainingData = data;
-      const testingData = data.slice(-10);
-      const padMax = Math.max(...data.map((el) => el.dates.length));
-
-      console.log("Data size: ", data.length);
-      console.log("Pad max: ", padMax);
-      const [model, history] = await trainModel(trainingData, padMax);
-      const [expectedResults, modelOut] = makePredictions(testingData, model, padMax);
-      console.log("Testing data: ");
-      console.log(testingData);
-      console.log("Expected results: ");
-      console.log(expectedResults);
-      console.log("Testing results: ");
-      console.log(modelOut.arraySync());
-      console.log("Testing accuracy: ", testingAcc(modelOut.arraySync(), expectedResults));
-      
-      plotLosses(history);
-
-      //saveModel(model);
-    }
-
-    const dataReducer = (array, min, max) => {
-      array.sort((a, b) => b.f1.length - a.f1.length)
-      while (array[0].f1.length > max) {
-        array.shift();
+    <script>
+      const run = async () => {
+        let history = <%- JSON.stringify(history) %>;
+        plotLosses(history);
       }
-      while (array[array.length - 1].f1.length < min) {
-        array.pop();
-      }
-      return array;
-    }
 
-    const shuffle = (array) => {
-      let currentIndex = array.length, randomIndex;
+      const plotLosses = (history) => {
+        let valLoss = {
+          y: history.history.val_loss,
+          type: "scatter",
+          mode: "lines",
+          name: "Validation Loss"
+        };
 
-      while (currentIndex != 0) {
-        randomIndex = Math.floor(Math.random() * currentIndex);
-        currentIndex--;
-        [array[currentIndex], array[randomIndex]] = [
-          array[randomIndex], array[currentIndex]];
-      }
-      return array;
-    }
+        let trainingloss = {
+          y: history.history.loss,
+          type: "scatter",
+          mode: "lines",
+          name: "Training Loss"
+        };
 
-    const testingAcc = (testingRes, expectedRes) => {
-      function indexOfMax(arr) {
-        if (arr.length === 0) {
-          return -1;
-        }
-        let max = arr[0];
-        let maxIndex = 0;
-        for (let i = 1; i < arr.length; i++) {
-          if (arr[i] > max) {
-            maxIndex = i;
-            max = arr[i];
+        let layout = {
+          title: "Training and Validation Loss",
+          xaxis: {
+            title: "Epochs",
+            showgrid: false,
+            zeroline: false
+          },
+          yaxis: {
+            title: "Loss",
+            showline: false
           }
-        }
-        return maxIndex;
+        };
+
+        let plotData = [valLoss, trainingloss];
+
+        Plotly.newPlot("lossesPlot", plotData, layout);
       }
 
-      let correctPredictions = 0;
-
-      for (let i = 0; i < testingRes.length; i++) {
-        if (indexOfMax(testingRes[i]) == expectedRes[i].indexOf(1)) {
-          correctPredictions += 1;
-        } 
-      }
-      return (correctPredictions / testingRes.length);
-    }
-
-
-    const plotLosses = (history) => {
-      let valLoss = {
-        y: history.history.val_loss,
-        type: "scatter",
-        mode: "lines",
-        name: "Validation Loss"
-      };
-
-      let trainingloss = {
-        y: history.history.loss,
-        type: "scatter",
-        mode: "lines",
-        name: "Training Loss"
-      };
-
-      let layout = {
-        title: "Training and Validation Loss",
-        xaxis: {
-          title: "Epochs",
-          showgrid: false,
-          zeroline: false
-        },
-        yaxis: {
-          title: "Loss",
-          showline: false
-        }
-      };
-
-      let plotData = [valLoss, trainingloss];
-
-      Plotly.newPlot("lossesPlot", plotData, layout);
-    }
-
-    run();
-  </script>
-</body>
-
+      run();
+    </script>
+  </body>
 </html>
