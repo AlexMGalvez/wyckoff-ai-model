@@ -1,58 +1,202 @@
 <html>
-  <head>
-    <title>WyckoffAI</title>
-    <!-- used to supress favicon error -->
-    <link rel="shortcut icon" href="/sdfse" />
-    <script src="https://cdn.plot.ly/plotly-2.12.1.min.js"></script>
-  </head>
-  <body>
-    <h2>Wyckoff Ai Model</h2>
-    <div id="lossesPlot"></div>
 
-    <!-- These script tags were used in an early version -->
-    <!-- <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/hyperparameters@latest/dist/hyperparameters.min.js"> </script> --> 
+<head>
+  <title>WyckoffAI</title>
+  <!-- used to supress favicon error -->
+  <link rel="shortcut icon" href="/sdfse" />
+  <script src="https://cdn.plot.ly/plotly-2.12.1.min.js"></script>
+</head>
 
-    <script>
-      const run = async () => {
-        let history = <%- JSON.stringify(history) %>;
-        plotLosses(history);
+<body>
+  <h2>Wyckoff Ai Model</h2>
+  <div id="lossesPlot"></div>
+  <div id="samplesPlot"></div>
+
+  <!-- These script tags were used in an early version -->
+  <!-- <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hyperparameters@latest/dist/hyperparameters.min.js"> </script> -->
+
+  <script>
+    const run = async () => {
+      let history = <%- JSON.stringify(history) %>;
+      let plotData = <%- JSON.stringify(plotData) %>;
+
+      plotLosses(history);
+      samplesPlot(plotData.stock.rawPlotData, plotData.stock.diffPlotData, plotData.stock.normPlotData, plotData.volume.rawPlotData, plotData.volume.diffPlotData, plotData.volume.normPlotData);
+    }
+
+    /*
+      Plot the training and validation loss percentages of the model's performance
+    */
+    const plotLosses = (history) => {
+      let valLoss = {
+        y: history.history.val_loss,
+        type: "scatter",
+        mode: "lines",
+        name: "Validation Loss"
+      };
+
+      let trainingloss = {
+        y: history.history.loss,
+        type: "scatter",
+        mode: "lines",
+        name: "Training Loss"
+      };
+
+      let layout = {
+        title: "Training and Validation Loss",
+        xaxis: {
+          title: "Epochs",
+          showgrid: false,
+          zeroline: false
+        },
+        yaxis: {
+          title: "Loss",
+          showline: false
+        }
+      };
+
+      let plotData = [valLoss, trainingloss];
+
+      Plotly.newPlot("lossesPlot", plotData, layout);
+    }
+
+    const samplesPlot = (y1, y2, y3, y4, y5, y6) => {
+      var data = [];
+      var trace1;
+      var trace2;
+      for (let i = 0; i < y1.length; i++) {
+        var trace1 = {
+          y: y1[i],
+          type: 'scatter',
+          legendgroup: 'group' + i,
+        };
+        var trace2 = {
+          y: y2[i],
+          xaxis: 'x2',
+          yaxis: 'y2',
+          type: 'scatter',
+          legendgroup: 'group' + i,
+        };
+        var trace3 = {
+          y: y3[i],
+          xaxis: 'x3',
+          yaxis: 'y3',
+          type: 'scatter',
+          legendgroup: 'group' + i,
+        };
+        var trace4 = {
+          y: y4[i],
+          xaxis: 'x4',
+          yaxis: 'y4',          
+          type: 'scatter',
+          legendgroup: 'group' + i,
+        };
+        var trace5 = {
+          y: y5[i],
+          xaxis: 'x5',
+          yaxis: 'y5',
+          type: 'scatter',
+          legendgroup: 'group' + i,
+        };
+        var trace6 = {
+          y: y6[i],
+          xaxis: 'x6',
+          yaxis: 'y6',
+          type: 'scatter',
+          legendgroup: 'group' + i,
+        };        
+        data.push(trace1);
+        data.push(trace2);
+        data.push(trace3);
+        data.push(trace4);
+        data.push(trace5);
+        data.push(trace6);        
       }
 
-      const plotLosses = (history) => {
-        let valLoss = {
-          y: history.history.val_loss,
-          type: "scatter",
-          mode: "lines",
-          name: "Validation Loss"
-        };
-
-        let trainingloss = {
-          y: history.history.loss,
-          type: "scatter",
-          mode: "lines",
-          name: "Training Loss"
-        };
-
-        let layout = {
-          title: "Training and Validation Loss",
-          xaxis: {
-            title: "Epochs",
-            showgrid: false,
-            zeroline: false
+      var layout = {
+        title: "Data Processing Progression with Sample Data",
+        grid: { rows: 2, columns: 3, pattern: 'independent' },
+        annotations: [{
+          text: "Raw Stock Data",
+          font: {
+            size: 14,
           },
-          yaxis: {
-            title: "Loss",
-            showline: false
-          }
-        };
+          showarrow: false,
+          align: 'center',
+          x: 0.11,
+          y: 1.1,
+          xref: 'paper',
+          yref: 'paper',
+        },
+        {
+          text: "Differenced Stock Data",
+          font: {
+            size: 14,
+          },
+          showarrow: false,
+          align: 'center',
+          x: 0.51,
+          y: 1.1,
+          xref: 'paper',
+          yref: 'paper',
+        },
+        {
+          text: "Differenced & Normalized Stock Data with Padding",
+          font: {
+            size: 14,
+          },
+          showarrow: false,
+          align: 'center',
+          x: 1,
+          y: 1.1,
+          xref: 'paper',
+          yref: 'paper',
+        },
+        {
+          text: "Raw Volume Data",
+          font: {
+            size: 14,
+          },
+          showarrow: false,
+          align: 'center',
+          x: 0.11,
+          y: 0.5,
+          xref: 'paper',
+          yref: 'paper',
+        },
+        {
+          text: "Differenced Volume Data",
+          font: {
+            size: 14,
+          },
+          showarrow: false,
+          align: 'center',
+          x: 0.51,
+          y: 0.5,
+          xref: 'paper',
+          yref: 'paper',
+        },
+        {
+          text: "Differenced & Normalized Volume Data with Padding",
+          font: {
+            size: 14,
+          },
+          showarrow: false,
+          align: 'center',
+          x: 1,
+          y: 0.5,
+          xref: 'paper',
+          yref: 'paper',
+        },
+        ]
+      };
 
-        let plotData = [valLoss, trainingloss];
+      Plotly.newPlot('samplesPlot', data, layout);
+    }
 
-        Plotly.newPlot("lossesPlot", plotData, layout);
-      }
+    run();
+  </script>
+</body>
 
-      run();
-    </script>
-  </body>
 </html>

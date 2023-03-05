@@ -3,28 +3,35 @@ let app = express();
 let fs = require("fs");
 
 const PORT = "1235";
-const dataProcessing = require("./static/data_processing.js");
+const dataProcessing = require("./static/data_preprocessing.js");
+const dataModelProcessing = require("./static/data_model_processing.js");
 const modelProcessing = require("./static/model.js");
 const dataHelpers = require("./static/data_helpers.js");
 const readFiles = dataProcessing.readFiles;
 const modelMain = modelProcessing.modelMain;
 const makePredictions = modelProcessing.makePredictions;
+const plotData = dataModelProcessing.plotData;
 const dataReducer = dataHelpers.dataReducer;
 const shuffle = dataHelpers.shuffle;
 const groupBy = dataHelpers.groupBy;
 const testingAcc = dataHelpers.testingAcc;
+
+const REMOVE_LESS_THAN = 50;
+const REMOVE_GREATER_THAN = 400;
+const TRAINING_DATA_SIZE = 10;
 
 app.set("view engine", "ejs");
 app.use("/static", express.static("./static/"));
 
 app.get("/", async function (req, res) {
   let data = readFiles();
-  data = dataReducer(data, 20, 400);
+  data = dataReducer(data, REMOVE_LESS_THAN, REMOVE_GREATER_THAN);
   // data.forEach(e => console.log(e.dates.length))
   shuffle(data);
-  const trainingData = data.slice(0, -10);
-  //const trainingData = data;
-  const testingData = data.slice(-10); // data used for testing how well the model trained
+
+  const trainingData = data.slice(0, -TRAINING_DATA_SIZE);
+  const testingData = data.slice(-TRAINING_DATA_SIZE); // data used for testing how well the model trained
+
   const padMax = Math.max(...data.map((el) => el.dates.length));
   console.log("Training data size: ", trainingData.length);
   console.log("Testing data size: ", testingData.length);
@@ -43,14 +50,14 @@ app.get("/", async function (req, res) {
   const [expectedResults, modelOut] = makePredictions(testingData, model, padMax);
   // console.log("Testing data: ");
   // console.log(testingData);
-  console.log("Expected results: ");
-  console.log(expectedResults);
-  console.log("Testing results: ");
-  console.log(modelOut.arraySync());
+  console.log("");
+  const testingResults = modelOut.arraySync();
+  for (let i = 0; i < expectedResults.length; i++) {
+    console.log("Expected: ", expectedResults[i], "Outcome: ", testingResults[i]);
+  }
   console.log("Testing accuracy: ", testingAcc(modelOut.arraySync(), expectedResults));
 
-  //res.render("home", { data });
-  res.render("home", { history });
+  res.render("home", { history, plotData });
 
   // Save model 
   // ----------

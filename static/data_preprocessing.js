@@ -1,3 +1,10 @@
+/**
+ * ---------------------
+ * data_preprocessing.js
+ * ---------------------
+ * These functions are responsible for processing raw .csv and .ods stock data into clean, usable javascript stock data
+ */
+
 let fs = require("fs");
 let papa = require("papaparse");
 let XLSX = require("xlsx");
