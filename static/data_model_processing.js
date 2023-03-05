@@ -6,9 +6,9 @@
  */
 
 const PLOTDATASIZE = 5;
-let plotData = { 
-    stock: { rawPlotData: [], diffPlotData: [], normPlotData: [] }, 
-    volume: { rawPlotData: [], diffPlotData: [], normPlotData: [] } 
+let plotData = {
+    stock: { rawPlotData: [], diffPlotData: [], normPlotData: [] },
+    volume: { rawPlotData: [], diffPlotData: [], normPlotData: [] }
 };
 
 /*
@@ -39,6 +39,44 @@ const dataNormalization = (data) => {
 }
 
 /*
+   Trim an array by replacing outliers beyond the 3rd or 1st quartiles with min and max values
+*/
+const trimArray = (someArray) => {
+    // Copy the values, rather than operating on references to existing values
+    let values = someArray.concat();
+
+    // Then sort
+    values.sort(function (a, b) {
+        return a - b;
+    });
+
+    /* Then find a generous IQR. This is generous because if (values.length / 4) 
+     * is not an int, then really you should average the two elements on either 
+     * side to find q1.
+     */
+    let q1 = values[Math.floor((values.length / 4))];
+    // Likewise for q3. 
+    let q3 = values[Math.ceil((values.length * (3 / 4)))];
+    let iqr = q3 - q1;
+
+    let maxValue = q3 + iqr * 1.5;
+    let minValue = q1 - iqr * 1.5;
+
+    let trimmedArray = [];
+    someArray.forEach(element => {
+        if (element > maxValue) {
+            trimmedArray.push(maxValue);
+        }
+        else if (element < minValue) {
+            trimmedArray.push(minValue);
+        } else {
+            trimmedArray.push(element);
+        }
+    });
+    return trimmedArray;
+}
+
+/*
   Reformats raw data into X and Y arrays for feeding into the neural network and provides a padding index array.
   Receives:
     data is an array of stock pattern objects.
@@ -63,10 +101,11 @@ const reformatRawData = (data, specialChar, inputLayerShape, toPlot) => {
     let feature2Norm;
 
     for (let i = 0; i < data.length; i++) {
-        feature1Diff = dataDifferencing([...data[i].f1]);
+        // trim feature array, then difference, then normalize
+        feature1Diff = dataDifferencing(trimArray([...data[i].f1]));
         feature1Norm = dataNormalization(feature1Diff);
 
-        feature2Diff = dataDifferencing([...data[i].f2]);
+        feature2Diff = dataDifferencing(trimArray([...data[i].f2]));
         feature2Norm = dataNormalization(feature2Diff);
 
         // Collect sample data for plotting
@@ -116,7 +155,6 @@ const reformatRawData = (data, specialChar, inputLayerShape, toPlot) => {
     }
     return [X, Y, paddingArray];
 };
-
 
 module.exports = {
     reformatRawData,

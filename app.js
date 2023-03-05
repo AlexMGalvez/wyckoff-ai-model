@@ -16,7 +16,7 @@ const shuffle = dataHelpers.shuffle;
 const groupBy = dataHelpers.groupBy;
 const testingAcc = dataHelpers.testingAcc;
 
-const REMOVE_LESS_THAN = 50;
+const REMOVE_LESS_THAN = 30;
 const REMOVE_GREATER_THAN = 400;
 const TRAINING_DATA_SIZE = 10;
 
@@ -51,9 +51,10 @@ app.get("/", async function (req, res) {
   // console.log("Testing data: ");
   // console.log(testingData);
   console.log("");
+  console.log("Testing results:");
   const testingResults = modelOut.arraySync();
   for (let i = 0; i < expectedResults.length; i++) {
-    console.log("Expected: ", expectedResults[i], "Outcome: ", testingResults[i]);
+    console.log("Expected: ", expectedResults[i], " Outcome: ", testingResults[i]);
   }
   console.log("Testing accuracy: ", testingAcc(modelOut.arraySync(), expectedResults));
 
