@@ -5,7 +5,11 @@
  * These functions are responsible for processing javascript stock data into data that tensorflow can easily use
  */
 
+const ss = require("simple-statistics");
+
 const PLOTDATASIZE = 5;
+const PERCENTILE = 0.05;
+
 let plotData = {
     stock: { rawPlotData: [], diffPlotData: [], normPlotData: [] },
     volume: { rawPlotData: [], diffPlotData: [], normPlotData: [] }
@@ -39,41 +43,25 @@ const dataNormalization = (data) => {
 }
 
 /*
-   Trim an array by replacing outliers beyond the 3rd or 1st quartiles with min and max values
+   Winsorize an array by replacing outliers beyone the percentile with min and max values
 */
-const trimArray = (someArray) => {
-    // Copy the values, rather than operating on references to existing values
-    let values = someArray.concat();
+const winsorizeArray = (someArray) => {
+    let low = ss.quantile(someArray, PERCENTILE);
+    let high = ss.quantile(someArray, 1 - PERCENTILE);
+    let winsorizedArray = [];
 
-    // Then sort
-    values.sort(function (a, b) {
-        return a - b;
-    });
-
-    /* Then find a generous IQR. This is generous because if (values.length / 4) 
-     * is not an int, then really you should average the two elements on either 
-     * side to find q1.
-     */
-    let q1 = values[Math.floor((values.length / 4))];
-    // Likewise for q3. 
-    let q3 = values[Math.ceil((values.length * (3 / 4)))];
-    let iqr = q3 - q1;
-
-    let maxValue = q3 + iqr * 1.5;
-    let minValue = q1 - iqr * 1.5;
-
-    let trimmedArray = [];
     someArray.forEach(element => {
-        if (element > maxValue) {
-            trimmedArray.push(maxValue);
+        if (element < low) {
+            winsorizedArray.push(low);
         }
-        else if (element < minValue) {
-            trimmedArray.push(minValue);
+        else if (element > high) {
+            winsorizedArray.push(high);
         } else {
-            trimmedArray.push(element);
+            winsorizedArray.push(element);
         }
     });
-    return trimmedArray;
+
+    return winsorizedArray;
 }
 
 /*
@@ -95,26 +83,30 @@ const reformatRawData = (data, specialChar, inputLayerShape, toPlot) => {
     let X = [];
     let Y = [];
     let paddingArray = [];
+    let feature1Wins;
     let feature1Diff;
     let feature1Norm;
+    let feature2Wins;
     let feature2Diff;
     let feature2Norm;
 
     for (let i = 0; i < data.length; i++) {
-        // trim feature array, then difference, then normalize
-        feature1Diff = dataDifferencing(trimArray([...data[i].f1]));
+        // winsorize feature array for outliers, then difference, then normalize
+        feature1Wins = winsorizeArray([...data[i].f1]);
+        feature1Diff = dataDifferencing(feature1Wins);
         feature1Norm = dataNormalization(feature1Diff);
 
-        feature2Diff = dataDifferencing(trimArray([...data[i].f2]));
+        feature2Wins = winsorizeArray([...data[i].f2]);
+        feature2Diff = dataDifferencing(feature2Wins);
         feature2Norm = dataNormalization(feature2Diff);
 
         // Collect sample data for plotting
         if (toPlot && i < PLOTDATASIZE) {
-            plotData.stock.rawPlotData.push([...data[i].f1]);
+            plotData.stock.rawPlotData.push(feature1Wins);
             plotData.stock.diffPlotData.push(feature1Diff);
             plotData.stock.normPlotData.push(feature1Norm);
 
-            plotData.volume.rawPlotData.push([...data[i].f2]);
+            plotData.volume.rawPlotData.push(feature2Wins);
             plotData.volume.diffPlotData.push(feature2Diff);
             plotData.volume.normPlotData.push(feature2Norm);
         }

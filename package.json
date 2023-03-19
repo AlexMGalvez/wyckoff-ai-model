@@ -17,9 +17,10 @@
     "ejs": "^3.1.7",
     "express": "^4.18.0",
     "fs": "^0.0.1-security",
+    "hyperparameters": "^0.25.6",
     "node-gyp": "^9.3.0",
     "papaparse": "^5.3.2",
-    "r-script": "^0.0.4",
+    "simple-statistics": "^7.8.3",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
