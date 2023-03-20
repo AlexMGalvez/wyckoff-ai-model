@@ -154,8 +154,8 @@ const fileToObjs = (fileName, fileData) => {
       dates: date,
       f1: stockClosingPrice,
       f2: stockVolume,
-      //f3: benchClosingPrice, // TODO: temporarily remove both features. Plan on using a running index instead
-      //f4: benchVolume,
+      f3: benchClosingPrice,
+      //f4: benchVolume, // TODO: temporarily remove bench volume
     };
     fileContent.push(stockContent);
     date = [];

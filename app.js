@@ -19,6 +19,7 @@ const testingAcc = dataHelpers.testingAcc;
 const REMOVE_LESS_THAN = 30;
 const REMOVE_GREATER_THAN = 400;
 const TRAINING_DATA_SIZE = 10;
+const NUM_FEATURES = 2;
 
 app.set("view engine", "ejs");
 app.use("/static", express.static("./static/"));
@@ -33,6 +34,7 @@ app.get("/", async function (req, res) {
   const testingData = data.slice(-TRAINING_DATA_SIZE); // data used for testing how well the model trained
 
   const padMax = Math.max(...data.map((el) => el.dates.length));
+  const inputLayerShape = [NUM_FEATURES, padMax];
   console.log("Training data size: ", trainingData.length);
   console.log("Testing data size: ", testingData.length);
   console.log("Total data size: ", data.length);
@@ -43,11 +45,11 @@ app.get("/", async function (req, res) {
 
   // Create and train model
   // ----------------------
-  const [model, history] = await modelMain(trainingData, padMax);
+  const [model, history] = await modelMain(trainingData, inputLayerShape);
 
   // Test how effective the model is
   // -------------------------------
-  const [expectedResults, modelOut] = makePredictions(testingData, model, padMax);
+  const [expectedResults, modelOut] = makePredictions(testingData, model);
   // console.log("Testing data: ");
   // console.log(testingData);
   console.log("");

@@ -7,12 +7,13 @@
 
 const ss = require("simple-statistics");
 
-const PLOTDATASIZE = 5;
+const PLOT_DATA_SIZE = 5;
 const PERCENTILE = 0.05;
 
 let plotData = {
     stock: { rawPlotData: [], diffPlotData: [], normPlotData: [] },
-    volume: { rawPlotData: [], diffPlotData: [], normPlotData: [] }
+    volume: { rawPlotData: [], diffPlotData: [], normPlotData: [] },
+    benchStock: { rawPlotData: [], diffPlotData: [], normPlotData: [] }
 };
 
 /*
@@ -43,7 +44,7 @@ const dataNormalization = (data) => {
 }
 
 /*
-   Winsorize an array by replacing outliers beyone the percentile with min and max values
+   Winsorize an array by replacing outliers beyond the percentile boundaries with min and max values
 */
 const winsorizeArray = (someArray) => {
     let low = ss.quantile(someArray, PERCENTILE);
@@ -77,52 +78,62 @@ const winsorizeArray = (someArray) => {
     Y is defined as an output array containing one hot encoded arrays representing the output of each stock. Ex: [0, 1, 0]
     Y = [[num, num, num], ...]
 
-    paddingArray is an array of numbers representing the indexes of each stock where padding begins.
 */
 const reformatRawData = (data, specialChar, inputLayerShape, toPlot) => {
     let X = [];
     let Y = [];
-    let paddingArray = [];
     let feature1Wins;
     let feature1Diff;
     let feature1Norm;
     let feature2Wins;
     let feature2Diff;
     let feature2Norm;
+    let feature3Wins;
+    let feature3Diff;
+    let feature3Norm;
 
     for (let i = 0; i < data.length; i++) {
-        // winsorize feature array for outliers, then difference, then normalize
-        feature1Wins = winsorizeArray([...data[i].f1]);
-        feature1Diff = dataDifferencing(feature1Wins);
-        feature1Norm = dataNormalization(feature1Diff);
+        // difference feature array for outliers, then winsorize, then normalize
+        feature1Diff = dataDifferencing([...data[i].f1]);
+        feature1Wins = winsorizeArray(feature1Diff);
+        feature1Norm = dataNormalization(feature1Wins);
 
-        feature2Wins = winsorizeArray([...data[i].f2]);
-        feature2Diff = dataDifferencing(feature2Wins);
-        feature2Norm = dataNormalization(feature2Diff);
+        feature2Diff = dataDifferencing([...data[i].f2]);
+        feature2Wins = winsorizeArray(feature2Diff);
+        feature2Norm = dataNormalization(feature2Wins);
+
+        feature3Diff = dataDifferencing([...data[i].f3]);
+        feature3Wins = winsorizeArray(feature3Diff);
+        feature3Norm = dataNormalization(feature3Wins);
+
+        // provide padding for short length arrays
+        for (let j = feature1Norm.length; j < inputLayerShape[1]; j++) {
+            feature1Norm.push(specialChar);
+            feature2Norm.push(specialChar);
+            feature3Norm.push(specialChar);
+        }
 
         // Collect sample data for plotting
-        if (toPlot && i < PLOTDATASIZE) {
-            plotData.stock.rawPlotData.push(feature1Wins);
-            plotData.stock.diffPlotData.push(feature1Diff);
+        if (toPlot && i < PLOT_DATA_SIZE) {
+            plotData.stock.rawPlotData.push([...data[i].f1]);
+            plotData.stock.diffPlotData.push(feature1Wins);
             plotData.stock.normPlotData.push(feature1Norm);
 
-            plotData.volume.rawPlotData.push(feature2Wins);
-            plotData.volume.diffPlotData.push(feature2Diff);
+            plotData.volume.rawPlotData.push([...data[i].f2]);
+            plotData.volume.diffPlotData.push(feature2Wins);
             plotData.volume.normPlotData.push(feature2Norm);
+
+            plotData.benchStock.rawPlotData.push([...data[i].f3]);
+            plotData.benchStock.diffPlotData.push(feature3Wins);
+            plotData.benchStock.normPlotData.push(feature3Norm);
         }
 
         X.push([
-            // [...data[i].f1], // Without differencing
-            // [...data[i].f2],
             feature1Norm,
             feature2Norm,
+            //feature3Norm,
         ]);
-        paddingArray.push(X[i][0].length);
-        // provide padding for short length arrays
-        for (let j = X[i][0].length; j < inputLayerShape[1]; j++) {
-            X[i][0].push(specialChar);
-            X[i][1].push(specialChar);
-        }
+
         // Y data doesnt get differenced or normalized because it is normalized by default
 
         // Three classification types
@@ -145,7 +156,7 @@ const reformatRawData = (data, specialChar, inputLayerShape, toPlot) => {
                 : [0, 1] // accumulation pattern ending at a spring in phase C or in progress
         );
     }
-    return [X, Y, paddingArray];
+    return [X, Y];
 };
 
 module.exports = {

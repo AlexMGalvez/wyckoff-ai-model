@@ -22,7 +22,7 @@
       let plotData = <%- JSON.stringify(plotData) %>;
 
       plotLosses(history);
-      samplesPlot(plotData.stock.rawPlotData, plotData.stock.diffPlotData, plotData.stock.normPlotData, plotData.volume.rawPlotData, plotData.volume.diffPlotData, plotData.volume.normPlotData);
+      samplesPlot(plotData.stock.rawPlotData, plotData.stock.diffPlotData, plotData.stock.normPlotData, plotData.volume.rawPlotData, plotData.volume.diffPlotData, plotData.volume.normPlotData, plotData.benchStock.rawPlotData, plotData.benchStock.diffPlotData, plotData.benchStock.normPlotData);
     }
 
     /*
@@ -61,7 +61,7 @@
       Plotly.newPlot("lossesPlot", plotData, layout);
     }
 
-    const samplesPlot = (y1, y2, y3, y4, y5, y6) => {
+    const samplesPlot = (y1, y2, y3, y4, y5, y6, y7, y8, y9) => {
       var data = [];
       var trace1;
       var trace2;
@@ -105,18 +105,42 @@
           yaxis: 'y6',
           type: 'scatter',
           legendgroup: 'group' + i,
-        };        
+        };    
+        var trace7 = {
+          y: y7[i],
+          xaxis: 'x7',
+          yaxis: 'y7',          
+          type: 'scatter',
+          legendgroup: 'group' + i,
+        };
+        var trace8 = {
+          y: y8[i],
+          xaxis: 'x8',
+          yaxis: 'y8',
+          type: 'scatter',
+          legendgroup: 'group' + i,
+        };
+        var trace9 = {
+          y: y9[i],
+          xaxis: 'x9',
+          yaxis: 'y9',
+          type: 'scatter',
+          legendgroup: 'group' + i,
+        };                
         data.push(trace1);
         data.push(trace2);
         data.push(trace3);
         data.push(trace4);
         data.push(trace5);
-        data.push(trace6);        
+        data.push(trace6); 
+        data.push(trace7);
+        data.push(trace8);
+        data.push(trace9);                
       }
 
       var layout = {
         title: "Data Processing Progression with Sample Data",
-        grid: { rows: 2, columns: 3, pattern: 'independent' },
+        grid: { rows: 3, columns: 3, pattern: 'independent' },
         annotations: [{
           text: "Raw Stock Data",
           font: {
@@ -130,7 +154,7 @@
           yref: 'paper',
         },
         {
-          text: "Differenced Stock Data with Outliers Removed",
+          text: "Differenced Stock Data with Outliers Adjusted",
           font: {
             size: 14,
           },
@@ -161,19 +185,19 @@
           showarrow: false,
           align: 'center',
           x: 0.11,
-          y: 0.47,
+          y: 0.68,
           xref: 'paper',
           yref: 'paper',
         },
         {
-          text: "Differenced Volume Data with Outliers Removed",
+          text: "Differenced Volume Data with Outliers Adjusted",
           font: {
             size: 14,
           },
           showarrow: false,
           align: 'center',
           x: 0.51,
-          y: 0.47,
+          y: 0.68,
           xref: 'paper',
           yref: 'paper',
         },
@@ -185,7 +209,43 @@
           showarrow: false,
           align: 'center',
           x: 1,
-          y: 0.47,
+          y: 0.68,
+          xref: 'paper',
+          yref: 'paper',
+        },
+        {
+          text: "Raw Bench Data",
+          font: {
+            size: 14,
+          },
+          showarrow: false,
+          align: 'center',
+          x: 0.11,
+          y: 0.23,
+          xref: 'paper',
+          yref: 'paper',
+        },
+        {
+          text: "Differenced Bench Data with Outliers Adjusted",
+          font: {
+            size: 14,
+          },
+          showarrow: false,
+          align: 'center',
+          x: 0.51,
+          y: 0.23,
+          xref: 'paper',
+          yref: 'paper',
+        },
+        {
+          text: "Differenced & Normalized Bench Data with Padding",
+          font: {
+            size: 14,
+          },
+          showarrow: false,
+          align: 'center',
+          x: 1,
+          y: 0.23,
           xref: 'paper',
           yref: 'paper',
         },

@@ -5,24 +5,24 @@ const dataModelProcessing = require("./data_model_processing.js");
 const reformatRawData = dataModelProcessing.reformatRawData;
 
 const specialChar = 0;
-const inputLayerNeurons = 64;
-let inputLayerShape = [2]; //4
-const rnnOutputNeurons = 16;
-const rnnInputShape = [16, 4];
-const outputLayerNeurons = 1;
-const outputLayerShape = 16;
-const nLayers = 4;
-const learningRate = 0.00011540514497336694;
+let inputLayerShape;
+// const inputLayerNeurons = 64;
+// const rnnOutputNeurons = 16;
+// const rnnInputShape = [16, 4];
+// const outputLayerNeurons = 1;
+// const outputLayerShape = 16;
+// const nLayers = 4;
+const learningRate = 0.00015693621084748272;
 const batchSize = 32;
-const nEpochs = 200; //200
+const nEpochs = 75; //75
 const validationSplit = 0.15; //0.25
-const rnn_input_layer_features = 2; //4
-const rnn_input_layer_timesteps = inputLayerNeurons / rnn_input_layer_features;
-const rnn_input_shape = [rnn_input_layer_features, rnn_input_layer_timesteps];
+// const rnn_input_layer_features = 2; //4
+// const rnn_input_layer_timesteps = inputLayerNeurons / rnn_input_layer_features;
+// const rnn_input_shape = [rnn_input_layer_features, rnn_input_layer_timesteps];
 
-const modelMain = async (data, padMax) => {
-  inputLayerShape.push(padMax);
-  const [X, Y, paddingArray] = reformatRawData(  // reformat, difference, normalize, and pad data
+const modelMain = async (data, inputLayerShapeParam) => {
+  inputLayerShape = inputLayerShapeParam;
+  const [X, Y] = reformatRawData(  // reformat, difference, normalize, and pad data
     data,
     specialChar,
     inputLayerShape,
@@ -50,7 +50,7 @@ const optimizedTraining = async (xs, ys) => {
   model.summary();
 
   model.compile({
-    optimizer: tf.train.adamax(learningRate),
+    optimizer: tf.train.rmsprop(learningRate),
     loss: "categoricalCrossentropy",
   });
 
@@ -173,9 +173,8 @@ const saveModel = async (model) => {
   console.log("Saving model and weights to the browser's downloads folder.")
 }
 
-const makePredictions = (data, model, padMax) => {
-  const inputLayerShape = [2, padMax]; // equals the maximum sized time series set (# of days) in the data
-  const [X, Y, paddingArray] = reformatRawData( // reformat, difference, normalize, and pad data
+const makePredictions = (data, model) => {
+  const [X, Y] = reformatRawData( // reformat, difference, normalize, and pad data
     data,
     specialChar,
     inputLayerShape,
